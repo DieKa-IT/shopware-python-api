@@ -1,0 +1,42 @@
+{
+  "product": {"entity": "product", "write-protected": false, "read-protected": false, "properties": {
+    "id": {"type": "uuid", "flags": {"primary_key": true, "required": true}},
+    "stock": {"type": "int", "flags": {"required": true}},
+    "productNumber": {"type": "string", "flags": {"required": true}},
+    "name": {"type": "string", "flags": {"translatable": true}},
+    "active": {"type": "boolean", "flags": {"required": true}},
+    "manufacturerId": {"type": "uuid", "flags": {}},
+    "createdAt": {"type": "date", "flags": {"required": true, "write_protected": [["system"]]}},
+    "customFields": {"type": "json_object", "properties": [], "flags": {}},
+    "price": {"type": "json_object", "properties": [], "flags": {"required": true}},
+    "manufacturer": {"type": "association", "relation": "many_to_one", "entity": "product_manufacturer", "flags": {}},
+    "categories": {"type": "association", "relation": "many_to_many", "entity": "category", "flags": {}},
+    "erpSync": {"type": "association", "relation": "one_to_one", "entity": "dieka_erp_product_sync", "flags": {"extension": true}},
+    "internalSecret": {"type": "string", "flags": {"required": true}}
+  }},
+  "category": {"entity": "category", "write-protected": false, "read-protected": false, "properties": {
+    "id": {"type": "uuid", "flags": {"required": true, "primary_key": true}},
+    "name": {"type": "string", "flags": {"translatable": true}},
+    "parent": {"type": "association", "relation": "many_to_one", "entity": "category", "flags": {}},
+    "products": {"type": "association", "relation": "many_to_many", "entity": "product", "flags": {}}
+  }},
+  "product_manufacturer": {"entity": "product_manufacturer", "write-protected": false, "read-protected": false, "properties": {
+    "id": {"type": "uuid", "flags": {"required": true, "primary_key": true}},
+    "name": {"type": "string", "flags": {"required": true}},
+    "media": {"type": "association", "relation": "many_to_one", "entity": "media", "flags": {}},
+    "products": {"type": "association", "relation": "one_to_many", "entity": "product", "flags": {}}
+  }},
+  "media": {"entity": "media", "write-protected": false, "read-protected": false, "properties": {
+    "id": {"type": "uuid", "flags": {"required": true, "primary_key": true}},
+    "url": {"type": "string", "flags": {"write_protected": [["system"]]}}
+  }},
+  "dieka_erp_product_sync": {"entity": "dieka_erp_product_sync", "write-protected": false, "read-protected": false, "properties": {
+    "id": {"type": "uuid", "flags": {"required": true, "primary_key": true}},
+    "product": {"type": "association", "relation": "many_to_one", "entity": "product", "flags": {}},
+    "status": {"type": "string", "flags": {}}
+  }},
+  "product_category": {"entity": "product_category", "write-protected": false, "read-protected": false, "properties": {
+    "productId": {"type": "uuid", "flags": {"primary_key": true}},
+    "categoryId": {"type": "uuid", "flags": {"primary_key": true}}
+  }}
+}

@@ -1,0 +1,51 @@
+{
+  "openapi": "3.1.0",
+  "info": {"title": "Shopware schema contract fixture", "version": "6.7"},
+  "paths": {
+    "/product": {
+      "get": {"operationId": "getProductList", "responses": {"200": {"content": {"application/json": {"schema": {"type": "object", "properties": {"total": {"type": "integer"}, "data": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}}}}}}}},
+      "post": {"requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Product"}}}}}
+    },
+    "/category": {"get": {"operationId": "getCategoryList", "responses": {"200": {"content": {"application/json": {"schema": {"type": "object", "properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Category"}}}}}}}}}},
+    "/product-manufacturer": {"get": {"operationId": "getProductManufacturerList", "responses": {"200": {"content": {"application/json": {"schema": {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ProductManufacturer"}}}}}}}}}},
+    "/media": {"get": {"operationId": "getMediaList", "responses": {"200": {"content": {"application/json": {"schema": {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/Media"}}}}}}}}}},
+    "/dieka-erp-product-sync": {"get": {"operationId": "getDiekaErpProductSyncList", "responses": {"200": {"content": {"application/json": {"schema": {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/DiekaErpProductSync"}}}}}}}}}},
+    "/product-category": {"get": {"operationId": "getProductCategoryList", "responses": {"200": {"content": {"application/json": {"schema": {"properties": {"data": {"type": "array", "items": {"$ref": "#/components/schemas/ProductCategory"}}}}}}}}}},
+    "/search/product": {"post": {"operationId": "searchProduct"}},
+    "/product/{id}": {"get": {"operationId": "getProduct"}},
+    "/_action/sync": {"post": {}}
+  },
+  "components": {"schemas": {
+    "EntityId": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "pattern": "^[0-9a-f]{32}$"}}},
+    "Product": {"allOf": [
+      {"$ref": "#/components/schemas/EntityId"},
+      {"type": "object", "required": ["stock", "productNumber", "price"], "properties": {
+        "stock": {"type": "integer", "format": "int64"},
+        "productNumber": {"type": "string"},
+        "name": {"type": ["string", "null"]},
+        "active": {"type": "boolean", "default": true},
+        "manufacturerId": {"type": ["string", "null"]},
+        "createdAt": {"type": "string", "format": "date-time", "readOnly": true},
+        "customFields": {"type": "object"},
+        "price": {"type": "array", "items": {"$ref": "#/components/schemas/Price"}},
+        "manufacturer": {"$ref": "#/components/schemas/ProductManufacturer"},
+        "categories": {"type": "array", "items": {"$ref": "#/components/schemas/Category"}},
+        "extensions": {"type": "object", "properties": {"erpSync": {"$ref": "#/components/schemas/DiekaErpProductSync"}}}
+      }}
+    ]},
+    "Category": {"type": "object", "properties": {
+      "id": {"type": "string"}, "name": {"type": "string", "nullable": true},
+      "parent": {"$ref": "#/components/schemas/Category"},
+      "products": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}
+    }},
+    "ProductManufacturer": {"type": "object", "properties": {
+      "id": {"type": "string"}, "name": {"type": "string"},
+      "media": {"$ref": "#/components/schemas/Media"},
+      "products": {"type": "array", "items": {"$ref": "#/components/schemas/Product"}}
+    }},
+    "Media": {"type": "object", "properties": {"id": {"type": "string"}, "url": {"type": "string"}}},
+    "DiekaErpProductSync": {"type": "object", "properties": {"id": {"type": "string"}, "product": {"$ref": "#/components/schemas/Product"}, "status": {"type": "string"}}},
+    "ProductCategory": {"type": "object", "properties": {"productId": {"type": "string"}, "categoryId": {"type": "string"}}},
+    "Price": {"type": "object", "properties": {"currencyId": {"type": "string"}, "gross": {"type": "number"}, "net": {"type": "number"}, "linked": {"type": "boolean"}}}
+  }}
+}

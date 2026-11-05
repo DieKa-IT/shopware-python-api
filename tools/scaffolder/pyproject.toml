@@ -1,0 +1,54 @@
+[project]
+name = "shopware-admin-scaffold"
+version = "0.1.0a1"
+description = "Generate typed Shopware Admin API models and contexts"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = ["Development Status :: 3 - Alpha"]
+authors = [
+    { name = "Henrik D.", email = "henrik.brokkoli@mailbox.org" }
+]
+requires-python = ">=3.12"
+dependencies = ["httpx>=0.28,<1", "shopware-admin-python>=0.1.0a1,<0.2"]
+
+[project.urls]
+Repository = "https://github.com/DieKa-IT/shopware-python-api"
+Issues = "https://github.com/DieKa-IT/shopware-python-api/issues"
+Documentation = "https://github.com/DieKa-IT/shopware-python-api/blob/main/tools/scaffolder/README.md"
+
+[project.scripts]
+shopware-admin-scaffold = "shopware_admin_scaffold.cli:main"
+
+[dependency-groups]
+dev = ["pytest>=8,<10", "mypy>=1.18,<2", "pyright>=1.1.400,<2", "ruff>=0.13,<1"]
+
+[tool.uv.sources]
+shopware-admin-python = { path = "../..", editable = true }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/shopware_admin_scaffold"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src/shopware_admin_scaffold"]
+
+[tool.pyright]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+include = ["src/shopware_admin_scaffold"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
