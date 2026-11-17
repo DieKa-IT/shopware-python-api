@@ -1,0 +1,128 @@
+name: Check and publish packages
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check ${{ matrix.project }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [".", "tools/scaffolder"]
+    defaults:
+      run:
+        working-directory: ${{ matrix.project }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: uv sync --locked
+      - name: Run tests and checks
+        run: |
+          uv run --locked pytest
+          uv run --locked mypy
+          uv run --locked pyright
+          uv run --locked ruff check .
+          uv run --locked ruff format --check .
+
+  build:
+    name: Build distributions
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+      - name: Check release tag matches both package versions
+        if: github.event_name == 'release'
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+        run: |
+          uv run --no-project python - <<'PY'
+          import os
+          import tomllib
+          from pathlib import Path
+
+          tag = os.environ["RELEASE_TAG"]
+          for path in (Path("pyproject.toml"), Path("tools/scaffolder/pyproject.toml")):
+              version = tomllib.loads(path.read_text())["project"]["version"]
+              if tag != f"v{version}":
+                  raise SystemExit(f"{path}: version {version} does not match tag {tag}")
+          PY
+      - name: Build library and scaffolder
+        run: |
+          uv build --no-sources --out-dir "$GITHUB_WORKSPACE/dist/runtime"
+          uv build --no-sources --project tools/scaffolder --out-dir "$GITHUB_WORKSPACE/dist/scaffolder"
+      - name: Validate package metadata and README rendering
+        run: uvx --from twine twine check --strict dist/runtime/* dist/scaffolder/*
+      - name: Verify wheels install together
+        run: |
+          uv venv "$RUNNER_TEMP/release-smoke"
+          uv pip install --python "$RUNNER_TEMP/release-smoke/bin/python" dist/runtime/*.whl dist/scaffolder/*.whl
+          "$RUNNER_TEMP/release-smoke/bin/python" -c "import shopware_admin; import shopware_admin_scaffold"
+          "$RUNNER_TEMP/release-smoke/bin/shopware-admin-scaffold" --version
+      - name: Store library distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-distributions
+          path: dist/runtime/
+          if-no-files-found: error
+      - name: Store scaffolder distributions
+        uses: actions/upload-artifact@v4
+        with:
+          name: scaffolder-distributions
+          path: dist/scaffolder/
+          if-no-files-found: error
+
+  publish-runtime:
+    name: Publish shopware-admin
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/shopware-admin/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: runtime-distributions
+          path: dist/
+      - name: Publish library with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish-scaffolder:
+    name: Publish shopware-admin-scaffold
+    if: github.event_name == 'release'
+    needs: [build, publish-runtime]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi-scaffold
+      url: https://pypi.org/project/shopware-admin-scaffold/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: scaffolder-distributions
+          path: dist/
+      - name: Publish scaffolder with Trusted Publishing
+        uses: pypa/gh-action-pypi-publish@release/v1
