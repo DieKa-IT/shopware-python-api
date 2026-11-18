@@ -53,6 +53,17 @@ exposed DAL definition are omitted. Unsupported primary-key contracts fail when
 selected. Generated types describe the available metadata, which may need
 refinement for your actual shop and plugins.
 
+## No scaffolding from Shopware PHP source yet
+
+The scaffolder cannot read Shopware's PHP source code or plugin entity definitions
+directly. Its current inputs are OpenAPI and DAL schemas fetched from a running
+shop or loaded from saved JSON files.
+
+Generating models from PHP entity and field definitions is a missing feature.
+Such a source could provide another way to discover API-aware fields excluded
+from OpenAPI, such as customer `vatIds`. No PHP-source mode is implemented today;
+those fields still require handwritten Python mappings.
+
 ## Other current limits
 
 | Area | Current gap |

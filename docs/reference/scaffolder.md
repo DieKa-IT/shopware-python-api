@@ -259,6 +259,10 @@ not a difference result.
 
 ## Schema input contract
 
+Only live API schemas and saved schema JSON are supported as inputs. Reading
+Shopware or plugin PHP source to generate models is not implemented. See
+[known gaps](../known-gaps.md#no-scaffolding-from-shopware-php-source-yet).
+
 Live discovery reads both endpoints from the same shop:
 
 - `/api/_info/openapi3.json?type=jsonapi`: API routes, flat entity schemas, and create-input requirements.
