@@ -38,6 +38,8 @@ typed sync-operation builder, are still missing. See [known gaps](known-gaps.md)
 
 Start here if you are new to the library.
 
+- [Connect to your shop and query products](tutorials/connect-to-shopware.md): install
+  the packages, create Shopware integration credentials, scaffold products, and query them.
 - [Your first query](tutorials/first-query.md): run a small query and read typed
   results without a live shop.
 - [Scaffold and extend models](tutorials/scaffold-and-extend.md): generate models

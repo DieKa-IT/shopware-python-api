@@ -18,6 +18,9 @@ The generator is a development tool. Your application imports only the runtime.
 See [known gaps](../../docs/known-gaps.md) for schema coverage and compatibility
 limits. Generating a model does not imply typed support for every API endpoint.
 
+For a complete setup, follow [Connect to your shop and query products](../../docs/tutorials/connect-to-shopware.md),
+including installation and creating credentials in Shopware Administration.
+
 ## Get started
 
 Requires Python 3.12+ and uv. From `tools/scaffolder` in a checkout of this repository:

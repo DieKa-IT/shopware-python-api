@@ -55,9 +55,13 @@ uv sync --locked
 uv run python -m examples.tshirt_collection
 ```
 
+To connect to a real shop, follow [Connect to your shop and query products](docs/tutorials/connect-to-shopware.md):
+install both packages, create integration credentials in Shopware Administration,
+generate product models, and run your first live query.
+
 ## Documentation
 
-- **Learn:** [Your first query](docs/tutorials/first-query.md) ·
+- **Learn:** [Connect to your shop](docs/tutorials/connect-to-shopware.md) · [Your first query](docs/tutorials/first-query.md) ·
   [Scaffold and extend models](docs/tutorials/scaffold-and-extend.md)
 - **See examples:** [Six common operations](docs/examples/common-operations.md)
 - **Do:** [Query products](docs/how-to/query-products.md) ·

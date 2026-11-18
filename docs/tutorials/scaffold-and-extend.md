@@ -8,6 +8,10 @@ You need Python 3.12+, uv, a checkout of this repository, and a reachable Shopwa
 Admin API with schema access. This exercise reads schemas and prepares a patch;
 it does not write customer data.
 
+For installation, creating integration credentials in Shopware Administration,
+and a first live product query, start with [Connect to your shop](connect-to-shopware.md).
+This tutorial focuses on extending the generated models.
+
 ## Install the development tools
 
 From the repository root:
