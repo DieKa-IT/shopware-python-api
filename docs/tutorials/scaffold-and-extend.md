@@ -2,9 +2,10 @@
 
 [Documentation](../index.md)
 
-Generate a product model from your shop, then add an application-specific field.
+Generate a customer model from your shop, then map `vatIds`: a field exposed by
+the API that can be missing from its OpenAPI documentation.
 You need Python 3.12+, uv, a checkout of this repository, and a reachable Shopware
-Admin API with schema access. This exercise reads schemas and prepares a query;
+Admin API with schema access. This exercise reads schemas and prepares a patch;
 it does not write product data.
 
 ## Install the development tools
@@ -31,41 +32,43 @@ uv --directory tools/scaffolder run shopware-admin-scaffold snapshot \
 The path is relative to the scaffolder directory selected by `--directory`.
 The bundle records both OpenAPI and DAL metadata for repeatable generation.
 
-## Generate a product model and context
+## Generate a customer model and context
 
 ```bash
 uv --directory tools/scaffolder run shopware-admin-scaffold generate \
   --schema-dir ../../schemas/my-shop \
   --output ../../my_shop_api --package my_shop_api \
-  --entity product --context ShopContext
+  --entity customer --context ShopContext
 ```
 
-In the repository root, inspect `my_shop_api/models/product.py` and
-`my_shop_api/_generated/model_bases.py`. The public `Product` inherits the generated
-`ProductBase`. The generated context imports the public model.
+In the repository root, inspect `my_shop_api/models/customer.py` and
+`my_shop_api/_generated/model_bases.py`. The public `Customer` inherits the generated
+`CustomerBase`. The generated context imports the public model.
 Associations to entities outside this selection are omitted with a notice.
 
 ## Extend the public model
 
-Suppose your shop already exposes a string custom field called `erp_reference`.
-In `my_shop_api/models/product.py`, keep its generated base import and add:
+Shopware exposes customer VAT IDs through the API as `vatIds`, even when the
+field is missing from the shop's OpenAPI documentation. This is an existing API
+field, so you do not need to create a custom field in Shopware.
+
+Check your actual response and generated model first. If `vatIds` is not already
+mapped, keep the generated base import in `my_shop_api/models/customer.py` and add:
 
 ```python
 from shopware_admin import Field, api_field
 
-# Keep the existing ProductBase import from the generated file.
+# Keep the existing CustomerBase import from the generated file.
 
-class Product(ProductBase):
-    erp_reference: Field[str | None] = api_field(
-        json_path=("customFields", "erp_reference"),
-        criteria_path="customFields.erp_reference",
-        default=None,
-    )
+class Customer(CustomerBase):
+    vat_ids: Field[list[str] | None] = api_field("vatIds", default=None)
 ```
 
-This declares a mapping; it does not create the custom field in Shopware.
-Dynamic custom-field names may be absent from schema metadata, so this extension
-belongs to your application.
+The Python attribute `vat_ids` maps to the top-level JSON property `vatIds`.
+Its value is a list of strings or null. `default=None` permits constructor omission
+without inserting a null into outgoing payloads. Confirm the returned shape and
+write permissions against your shop. If the generator already mapped this field,
+use that declaration instead of adding a duplicate mapping.
 
 ## Use the extension
 
@@ -74,15 +77,23 @@ Save this as `inspect_model.py` in the repository root:
 ```python
 from shopware_admin import AccessToken
 from my_shop_api.context import ShopContext
-from my_shop_api.models.product import Product
+from my_shop_api.models.customer import Customer
+
+# An illustrative API response; no request is sent.
+customer = Customer.from_data({"id": "1" * 32, "vatIds": ["DE123456789"]})
+print(customer.vat_ids)  # list[str] | None
 
 with ShopContext("https://shop.example", AccessToken("preview-only")) as shop:
-    query = shop.products.where(Product.erp_reference == "ERP-4711")
-    print(query.prepare().json)
+    patch = shop.customers.patch().set(Customer.vat_ids, ["DE123456789"])
+    print(shop.customers.prepare_update(customer.id, patch).json)
 ```
 
-Run `uv run python inspect_model.py`. Preparing the query makes no HTTP request;
-you should see a filter using `customFields.erp_reference`.
+Run `uv run python inspect_model.py`. You should see the VAT ID list and the
+payload `{'vatIds': ['DE123456789']}`. The VAT number is illustrative.
+Preparing the update makes no HTTP request. The same declaration provides typed
+response values, autocomplete, and a patch target without repeating the wire name
+in application code. To fetch real data later, use `shop.customers.get(customer_id)`
+with valid credentials and read `customer.vat_ids` when a customer is returned.
 
 Run the generation command again with `--force`. Your handwritten public model
 remains intact while changed generated files can be replaced.
