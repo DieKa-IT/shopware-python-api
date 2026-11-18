@@ -2,66 +2,163 @@
 
 [Documentation](../index.md) · [Getting started](../../tools/scaffolder/README.md)
 
-The commands below assume you are in `tools/scaffolder` in a repository checkout
-and have run `uv sync --locked`.
+## Command syntax
 
-## Schema sources and authentication
-
-Live discovery reads these endpoints from the same shop:
-
-- `/api/_info/openapi3.json?type=jsonapi` for API routes, flat entity schemas, and
-  create-input requirements.
-- `/api/_info/entity-schema.json` for DAL identities, cardinality, and field flags.
-
-Set `SHOPWARE_API_CLIENT_ID` and `SHOPWARE_API_CLIENT_SECRET`, or use
-`SHOPWARE_API_ACCESS_TOKEN`. Do not set both authentication modes. With neither,
-the tool requests schemas anonymously. Rejected supplied credentials fail without
-falling back. Schema HTTP errors do not echo credentials or response bodies.
-`--timeout` controls the request timeout in seconds (default 30).
-
-Save a bundle for offline generation and CI:
-
-```bash
-uv run shopware-admin-scaffold snapshot \
-  --url http://127.0.0.1:8000 --output ./schemas/shopware
-
-uv run shopware-admin-scaffold list --schema-dir ./schemas/shopware --json
-uv run shopware-admin-scaffold generate \
-  --schema-dir ./schemas/shopware \
-  --output ./src/my_shop_api --package my_shop_api \
-  --entity product --scaffold-related --context ShopContext
+```text
+shopware-admin-scaffold --version
+shopware-admin-scaffold list [OPTIONS]
+shopware-admin-scaffold snapshot [OPTIONS]
+shopware-admin-scaffold generate [OPTIONS]
 ```
 
-Bundles contain `openapi.json`, `entity-schema.json`, and an ownership manifest
-with canonical content hashes and the schema's reported version. A pair of manually
-exported JSON files is also accepted without a manifest. If a manifest exists,
-the hashes must match. Snapshot replacement requires an existing owned bundle and
-`--force`; arbitrary directories are never adopted. Both schemas are required.
-Offline commands do not connect to Shopware or inspect credential settings.
+A subcommand is required unless using root `--help` or `--version`. There are no
+positional arguments. Options belong after the subcommand, except root `--version`.
+In a checkout, run the command through `uv run` from `tools/scaffolder` after
+`uv sync --locked`.
 
-`list --filter` searches entity, route, and schema names without generating files.
-`generate` requires explicit `--entity` selections (repeat or comma-separate), or
-`--all`. Selections accept entity, route, or schema/class names. `--scaffold-related`
-adds direct association targets only once; it does not recursively generate the
-entire shop. Associations whose targets are outside the selection are omitted with
-a notice. Unsupported UUID/primary-key contracts appear in listings and fail when
-selected, including with `--all`.
+Requirements below apply **after merging CLI options and configuration**. An option
+marked required may be supplied by its TOML key instead. No configuration file is
+automatically discovered; pass `--config` explicitly.
 
-OpenAPI endpoints without matching exposed DAL metadata are omitted with a notice.
-For example, the shop may include `/notification` in OpenAPI while excluding that
-entity from the DAL export. Explicit entity identities and ambiguous matches still
-fail rather than guessing a mapping.
+| Command | Required settings | Result |
+| --- | --- | --- |
+| `list` | Exactly one of `url` or `schema_dir` | Lists exposed entities; writes no files. |
+| `snapshot` | Live `url` and `output` | Saves a schema bundle; `schema_dir` is rejected. |
+| `generate` | Exactly one source, `output`, `package`, and either nonempty `entities` or `all = true` | Generates the complete selected model package. |
 
-## Configuration and regeneration
+## Root options
+
+| Argument | Required? / default | Meaning |
+| --- | --- | --- |
+| `-h`, `--help` | Optional | Show root help and exit 0. Also available on every subcommand for its own help. |
+| `--version` | Optional | Print the installed scaffolder version and exit 0. Only available before a subcommand. |
+
+## Shared subcommand options
+
+These options are accepted by `list`, `snapshot`, and `generate`.
+
+| Argument | Value | Required? / default | Meaning |
+| --- | --- | --- | --- |
+| `--config PATH` | TOML file path | Optional; no file loaded by default | Load configuration. CLI paths are relative to the working directory; paths inside TOML are relative to that file. |
+| `--url URL` | Shop base URL, e.g. `https://shop.example` | Required source alternative; no default | Fetch both schemas from the live shop. Mutually exclusive with CLI `--schema-dir`. Required source for `snapshot`. |
+| `--schema-dir PATH` | Schema bundle directory | Required source alternative; no default | Load saved schemas without network or credential inspection. Allowed for `list` and `generate`; rejected by `snapshot`. |
+| `--timeout SECONDS` | Number | Optional; `30.0` | HTTP timeout for live schema requests. Must be finite and greater than zero for a live source. Has no effect on offline schema loading. |
+
+There must be exactly one source after configuration is merged. Passing either
+CLI source discards both configured source keys before applying the selected one.
+
+## `list` options
+
+In addition to the shared options:
+
+| Argument | Value | Required? / default | Meaning |
+| --- | --- | --- | --- |
+| `--filter TEXT` | Search text | Optional; no filtering | Case-insensitive substring search over entity, route, and schema names. Does not select models for generation. |
+| `--json` | Flag | Optional; false | Print a JSON array instead of tab-separated rows and a count summary. |
+
+JSON rows contain `entity` (DAL name), `route` (API route), `class_name` (derived
+Python class name), and `unsupported` (reason string or null). Unsupported entities
+remain visible in listings; selecting them for generation fails.
+
+## `snapshot` options
+
+In addition to the shared options:
+
+| Argument | Value | Required? / default | Meaning |
+| --- | --- | --- | --- |
+| `--output PATH` | Bundle directory | Required; no default | Destination for the two schema files and ownership manifest. |
+| `--force` | Flag | Optional; false | Permit replacement of an existing owned schema bundle. Does not adopt an arbitrary existing directory. Not configurable in TOML. |
+
+`snapshot` requires live `--url` or configured `url`. It does not accept generation
+options such as `--package`, `--entity`, `--dry-run`, or `--check`.
+
+## `generate` options
+
+In addition to the shared options:
+
+| Argument | Value | Required? / default | Meaning |
+| --- | --- | --- | --- |
+| `--output PATH` | Package directory | Required; no default | Destination package directory, e.g. `src/my_shop_api`. |
+| `--package NAME` | Dotted Python import name | Required; no default | Import name corresponding to the output directory, e.g. `my_shop_api` or `application.my_shop_api`. Includes any namespace prefixes. |
+| `--entity NAME` | Entity, route, or schema/class name | Required selection alternative; none by default | Select entities by case-insensitive exact match. Repeat the option or comma-separate names: `--entity product --entity category` or `--entity product,category`. Replaces the configured entity list and clears configured `all`. |
+| `--all` | Flag | Required selection alternative; false by default | Select every catalog entity and clear configured `entities`. Mutually exclusive with CLI `--entity`. Fails if any selected entity is unsupported. |
+| `--no-all` | Flag | Optional | Disable configured `all`. Does not itself select any entities; a nonempty configured entity list must remain. Mutually exclusive with CLI `--entity`. |
+| `--scaffold-related` | Flag | Optional; false | Add direct association targets of the initially selected entities once. Does not recursively traverse the graph. |
+| `--no-scaffold-related` | Flag | Optional | Disable configured related-entity expansion. |
+| `--context NAME` | Python class name | Optional; no context generated by default | Generate a context base and public subclass with entity sets for selected public models, e.g. `ShopContext`. |
+| `--force` | Flag | Optional; false | Allow changed owned generated files to be replaced. Public files remain untouched. Cannot be combined with `--check`. |
+| `--dry-run` | Flag | Optional; false | Inspect and report planned changes without writing. Mutually exclusive with `--check`. May be combined with `--force`, but still writes nothing. |
+| `--check` | Flag | Optional; false | Inspect without writing; exit 1 if generated files differ or public files need creation. Cannot be combined with `--dry-run` or `--force`. |
+
+`--dry-run` and `--check` still fetch schemas when using a live source. They are
+read-only with respect to the destination. `--force`, `--dry-run`, and `--check`
+are CLI-only; they are not configuration keys.
+
+Associations to entities outside the final selection are omitted with a notice.
+Missing or ambiguous selection names fail; use `list --filter` to find a name.
+Each generation replaces the complete selection rather than appending entities.
+
+## Configuration keys
+
+All keys are optional individually. The selected command's required settings must
+be satisfied by the merged result. Unknown keys are rejected.
+
+| TOML key | Type | Commands using it | Default / meaning |
+| --- | --- | --- | --- |
+| `url` | Nonempty string | All | No default; live schema source. |
+| `schema_dir` | Path string | `list`, `generate` | No default; offline schema source. Rejected by `snapshot`. |
+| `timeout` | Number | All, for live sources | `30.0` seconds. |
+| `output` | Path string | `snapshot`, `generate` | No default; required destination. |
+| `package` | Nonempty string | `generate` | No default; required dotted import name. |
+| `entities` | Array of nonempty strings | `generate` | Empty list; requires explicit selection or `all = true`. |
+| `all` | Boolean | `generate` | `false`; select all catalog entities. |
+| `scaffold_related` | Boolean | `generate` | `false`; one-level association expansion. |
+| `context` | Nonempty string | `generate` | Absent; no context generated. |
+| `entity` | Table of entity override tables | `generate` | Empty; naming overrides described below. |
+| `field` | Table of entity/field override tables | `generate` | Empty; field overrides described below. |
+
+Shared configuration files may contain settings for other commands; those settings
+do not make the corresponding CLI flags available on that command. For example,
+`list` accepts a config containing `output` but does not use it.
+
+Explicit CLI values override their corresponding configuration keys. Source and
+selection replacement follow the rules in the option tables. Configuration
+`all = true` and a nonempty `entities` list conflict unless a CLI selection clears
+one of them. Credentials are not valid TOML keys.
+
+### Entity overrides
+
+Use `[entity.DAL_ENTITY_NAME]`, for example `[entity.product_manufacturer]`.
+Overrides refer to selected entities by DAL name.
+
+| Key | Type | Default when omitted | Meaning |
+| --- | --- | --- | --- |
+| `class_name` | Python identifier string | Derived from schema name | Public model class name, e.g. `Manufacturer`. |
+| `set_name` | Python identifier string | Pluralized snake_case class name | Context entity-set name, e.g. `manufacturers`. |
+
+### Field overrides
+
+Use `[field.DAL_ENTITY_NAME.WIRE_PROPERTY]`. The property must already exist in
+the catalog; these overrides cannot add a missing field. Use a
+[public model extension](../how-to/add-model-fields.md) to add one.
+
+| Key | Type | Default when omitted | Meaning |
+| --- | --- | --- | --- |
+| `name` | Python identifier string | Derived from wire property | Python attribute name. Supported for scalars and associations. |
+| `nullable` | Boolean | Inferred from schemas | Whether a scalar's type permits null. Not supported for associations. |
+| `writable` | Boolean | Inferred from schemas | Whether a scalar can be assigned and written. Not supported for associations. |
+| `required_on_create` | Boolean | Inferred from POST input schema | Whether a scalar must have a write value when creating an entity. Not supported for associations. |
+
+A primary ID cannot be nullable or required on create. A read-only field cannot be
+required on create. Unknown names, unsupported override keys, Python keywords,
+reserved runtime members, and naming collisions fail before writes.
 
 ```toml
-# shopware-scaffold.toml
 schema_dir = "schemas/shopware"
 output = "src/my_shop_api"
 package = "my_shop_api"
-entities = ["product", "category", "product_manufacturer"]
+entities = ["product", "product_manufacturer"]
 context = "ShopContext"
-scaffold_related = false
 
 [entity.product_manufacturer]
 class_name = "Manufacturer"
@@ -74,28 +171,50 @@ required_on_create = true
 nullable = true
 ```
 
-Paths in TOML are relative to the configuration file; CLI paths are relative to
-the working directory. Explicit CLI values override configuration. Choosing a CLI
-source replaces the configured source; a CLI selection replaces the configured
-selection. `--no-all` and `--no-scaffold-related` can disable configured flags.
-Credentials are not configuration keys.
+## Authentication environment variables
 
-Entity overrides accept `class_name` and `set_name`. Field overrides use the DAL
-wire property name and accept `name`, `nullable`, `writable`, and
-`required_on_create`; association overrides only accept `name`. Unknown overrides,
-Python keywords, reserved runtime members, and naming collisions fail before writes.
+These variables are used only for live sources. There are no credential CLI flags.
 
-```bash
-uv run shopware-admin-scaffold generate --config shopware-scaffold.toml --dry-run
-uv run shopware-admin-scaffold generate --config shopware-scaffold.toml --force
-uv run shopware-admin-scaffold generate --config shopware-scaffold.toml --check
-```
+| Variable | Required? | Meaning |
+| --- | --- | --- |
+| `SHOPWARE_API_CLIENT_ID` | Required with client secret | Integration client ID. |
+| `SHOPWARE_API_CLIENT_SECRET` | Required with client ID | Integration client secret. |
+| `SHOPWARE_API_ACCESS_TOKEN` | Alternative to the integration pair | Existing access token. |
 
-`--dry-run` lists file changes and diagnostics without writing. `--check` is also
-read-only and exits 1 when generated files differ or public files need creation;
-0 means current and 2 means an error. With a live source, either mode still fetches
-schemas. Other successful commands exit 0. Pin the generator and use a saved bundle
-for repeatable CI checks.
+Use either the complete integration pair or an access token. Mixing modes or
+supplying an incomplete pair fails. With no credentials, requests are anonymous.
+Rejected supplied credentials fail without anonymous fallback. Schema HTTP errors
+do not echo credentials or response bodies.
+
+## Exit codes and output
+
+| Code | Meaning |
+| --- | --- |
+| `0` | Success, including help/version, `--dry-run`, and a current `--check`. |
+| `1` | `generate --check` found generated differences or public files needing creation. |
+| `2` | Argument parsing, configuration, schema, generation, or filesystem error. |
+
+Listings, snapshot confirmations, and file-change reports go to stdout. Generation
+notices and handled errors go to stderr. In `--check` mode, an error is code 2,
+not a difference result.
+
+## Schema input contract
+
+Live discovery reads both endpoints from the same shop:
+
+- `/api/_info/openapi3.json?type=jsonapi`: API routes, flat entity schemas, and create-input requirements.
+- `/api/_info/entity-schema.json`: DAL identities, cardinality, and field flags.
+
+Offline bundles require `openapi.json` and `entity-schema.json`. A saved bundle
+also has an ownership manifest with canonical content hashes and reported schema
+version. Manually exported pairs without a manifest are accepted; if a manifest
+exists, hashes must match. Offline commands do not connect to Shopware.
+
+OpenAPI endpoints without matching exposed DAL metadata are omitted with a notice.
+Explicit entity identities and ambiguous matches fail rather than guessing.
+Unsupported primary-key contracts remain visible in listings and fail on selection.
+
+## Generated files and overwrite behavior
 
 Generation creates this package:
 
@@ -158,24 +277,3 @@ the DAL's broad JSON classification. No Decimal or nested value-object codecs ar
 introduced. Dynamic custom-field names remain handwritten model extensions.
 Plugin extension fields use their nested `extensions` JSON path and their DAL
 criteria name; unknown fields remain available through runtime `raw_data`.
-
-## Validation
-
-```bash
-uv run pytest
-uv run mypy
-uv run pyright
-uv run ruff check .
-uv run ruff format --check .
-uv build
-```
-
-Tests use HTTPX MockTransport and compact schema pairs derived from the local
-Shopware schema builders. They cover generated consumer typing and runtime
-behavior, import orders, cyclic associations, custom fields, explicit writes,
-authentication, configuration, and overwrite protection. No test requires a live
-shop. Live compatibility with a particular Shopware/plugin version still needs
-verification against that installation's exported schemas and payloads.
-
-See the [architecture proposal](../scaffolding-proposal.md) for the design
-background and package boundary.
