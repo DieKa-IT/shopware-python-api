@@ -1,6 +1,6 @@
 [project]
 name = "shopware-admin-scaffold"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Generate typed Shopware Admin API models and contexts"
 readme = "README.md"
 license = "MIT"
