@@ -22,6 +22,8 @@ def _positive(value: int, label: str) -> None:
 
 @dataclass(frozen=True, eq=False)
 class Criteria(Generic[E]):
+    """Immutable filters, sorts, limits, and association loads for one entity."""
+
     model: type[E]
     _filters: tuple[Predicate, ...] = ()
     _sorts: tuple[Sort, ...] = ()
@@ -33,6 +35,7 @@ class Criteria(Generic[E]):
             raise QueryError("Criteria fields must belong to the queried root entity")
 
     def where(self, *predicates: Predicate) -> Criteria[E]:
+        """Return criteria with additional predicates combined using AND."""
         if not predicates:
             raise QueryError("where() requires at least one predicate")
         for predicate in predicates:
@@ -42,14 +45,17 @@ class Criteria(Generic[E]):
         return replace(self, _filters=(*self._filters, *predicates))
 
     def filter(self, *predicates: Predicate) -> Criteria[E]:
+        """Alias for where(); return criteria with additional AND-combined predicates."""
         return self.where(*predicates)
 
     def order_by(self, *sorts: Sort) -> Criteria[E]:
+        """Return criteria with sort expressions appended in priority order."""
         for sort in sorts:
             self._check_entity(sort.entity)
         return replace(self, _sorts=(*self._sorts, *sorts))
 
     def limit(self, size: int) -> Criteria[E]:
+        """Return criteria with a positive per-request result limit."""
         _positive(size, "limit")
         return replace(self, _limit=size)
 
@@ -59,6 +65,7 @@ class Criteria(Generic[E]):
         *,
         criteria: Criteria[R] | None = None,
     ) -> Criteria[E]:
+        """Include an association, optionally applying criteria to its related entities."""
         selected = _association_path(association)
         self._check_entity(selected.root.__entity__)
         nested = criteria if criteria is not None else Criteria(selected.descriptor.related)
@@ -69,6 +76,7 @@ class Criteria(Generic[E]):
         return replace(self, _associations=(*self._associations, (selected.path, nested)))
 
     def to_payload(self) -> dict[str, Any]:
+        """Compile criteria into a fresh Shopware search payload without sending it."""
         result: dict[str, Any] = {}
         if self._filters:
             result["filter"] = [predicate.to_payload() for predicate in self._filters]
@@ -97,10 +105,13 @@ class Criteria(Generic[E]):
 
 @dataclass(frozen=True, eq=False)
 class Patch(Generic[E]):
+    """Immutable, typed write selection; only explicitly selected fields are sent."""
+
     model: type[E]
     _changes: tuple[tuple[tuple[str, ...], Any], ...] = ()
 
     def set(self, field: FieldExpression[T], value: T) -> Patch[E]:
+        """Return a patch setting a writable direct field; explicit None sends JSON null."""
         if field.root.__entity__ != self.model.__entity__:
             raise MappingError("Patch field belongs to another entity")
         descriptor = self.model.__fields__.get(field.descriptor.name)
@@ -113,6 +124,7 @@ class Patch(Generic[E]):
         return replace(self, _changes=(*remaining, (descriptor.json_path, converted)))
 
     def to_payload(self) -> dict[str, Any]:
+        """Return a fresh nested JSON payload; reject a patch with no selected fields."""
         if not self._changes:
             raise MappingError("A patch must select at least one field")
         result: dict[str, Any] = {}

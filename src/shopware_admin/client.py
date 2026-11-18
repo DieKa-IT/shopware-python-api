@@ -36,22 +36,29 @@ _NOT_FOUND = object()
 
 @dataclass(frozen=True)
 class IntegrationAuth:
+    """Integration client ID and secret used to obtain and refresh access tokens."""
+
     client_id: str
     client_secret: str = field(repr=False)
 
 
 @dataclass(frozen=True)
 class AccessToken:
+    """An externally managed bearer token; the client does not refresh it."""
+
     token: str = field(repr=False)
 
 
 @dataclass(frozen=True)
 class RequestContext:
+    """Language, version, and inheritance settings applied as request headers."""
+
     language_id: str | None = None
     version_id: str | None = None
     inheritance: bool = False
 
     def headers(self) -> dict[str, str]:
+        """Return validated Shopware context headers without authentication."""
         headers: dict[str, str] = {}
         if self.language_id is not None:
             headers["sw-language-id"] = _id(self.language_id)
@@ -63,6 +70,8 @@ class RequestContext:
 
 
 class CountMode(IntEnum):
+    """Search totals: NONE omits totals, EXACT counts, NEXT_PAGES estimates."""
+
     NONE = 0
     EXACT = 1
     NEXT_PAGES = 2
@@ -76,6 +85,8 @@ def _id(value: str) -> str:
 
 @dataclass(frozen=True)
 class SearchResult(Generic[E]):
+    """A typed result page with items, pagination, count metadata, and aggregations."""
+
     items: list[E]
     total: int | None
     total_is_exact: bool
@@ -86,6 +97,8 @@ class SearchResult(Generic[E]):
 
 @dataclass(frozen=True, eq=False)
 class PreparedRequest(Generic[T]):
+    """A payload and header snapshot that sends no request until execute() is called."""
+
     method: str
     path: str
     _body: str | None = field(repr=False)
@@ -103,6 +116,7 @@ class PreparedRequest(Generic[T]):
         return dict(self._headers)
 
     def execute(self) -> T:
+        """Send the request and return its result; each call sends it again."""
         return self._executor(self)
 
 
@@ -206,6 +220,8 @@ class _Connection:
 
 
 class Client:
+    """Synchronous Admin API client with pooled HTTP connections and authentication."""
+
     def __init__(
         self,
         base_url: str,
@@ -216,6 +232,7 @@ class Client:
         timeout: float = 30.0,
         transport: httpx.BaseTransport | None = None,
     ):
+        """Configure the connection and register models without making HTTP requests."""
         self.registry = ModelRegistry([*self._declared_models(), *(models or [])])
         self.context = context if context is not None else RequestContext()
         self.context.headers()
@@ -233,6 +250,7 @@ class Client:
         self.close()
 
     def close(self) -> None:
+        """Close the owned connection pool; context views leave the shared pool open."""
         if self._owns_connection:
             self._connection.http.close()
 
@@ -245,6 +263,7 @@ class Client:
         return view
 
     def set(self, model: type[E]) -> Repository[E]:
+        """Register a model and return its typed repository without making a request."""
         self.registry.register(model)
         return Repository(self, self.registry.resolve(model))
 
@@ -317,6 +336,8 @@ class Client:
 
 
 class Repository(Generic[E]):
+    """Typed entity search and explicit CRUD operations for one model."""
+
     def __init__(self, client: Client, model: type[E]):
         if re.fullmatch(r"[a-z0-9][a-z0-9_-]*", model.__route__) is None:
             raise MappingError("Invalid entity API route")
@@ -325,15 +346,19 @@ class Repository(Generic[E]):
         self.path = f"/api/{model.__route__}"
 
     def search(self) -> Query[E]:
+        """Build an unfiltered query without making an HTTP request."""
         return Query(self, Criteria(self.model))
 
     def where(self, *predicates: Predicate) -> Query[E]:
+        """Build a query with AND-combined predicates without making a request."""
         return self.search().where(*predicates)
 
     def filter(self, *predicates: Predicate) -> Query[E]:
+        """Alias for where(); build a filtered query without making a request."""
         return self.where(*predicates)
 
     def patch(self) -> Patch[E]:
+        """Start an immutable patch selecting only explicitly set fields."""
         return Patch(self.model)
 
     def _prepare(
@@ -361,6 +386,8 @@ class Repository(Generic[E]):
         )
 
     def prepare_get(self, entity_id: str) -> PreparedRequest[E | None]:
+        """Prepare a read by ID; execution returns an entity or None for HTTP 404."""
+
         def execute(request: PreparedRequest[E | None]) -> E | None:
             data = self._send(request, allow_not_found=True)
             if data is _NOT_FOUND:
@@ -372,9 +399,11 @@ class Repository(Generic[E]):
         return self._prepare("GET", f"{self.path}/{_id(entity_id)}", None, execute)
 
     def get(self, entity_id: str) -> E | None:
+        """Fetch an entity by ID; return None only for HTTP 404."""
         return self.prepare_get(entity_id).execute()
 
     def prepare_create(self, entity: E) -> PreparedRequest[str]:
+        """Validate and snapshot creation values, fixing the ID before execution."""
         if not isinstance(entity, self.model):
             raise MappingError("Create requires an instance of the repository model")
         for name, descriptor in self.model.__fields__.items():
@@ -400,6 +429,7 @@ class Repository(Generic[E]):
         return self.prepare_create(entity).execute()
 
     def prepare_update(self, entity_id: str, patch: Patch[E]) -> PreparedRequest[None]:
+        """Validate and snapshot a patch without sending an update request."""
         if patch.model.__entity__ != self.model.__entity__:
             raise MappingError("Patch belongs to another entity")
         payload = patch.to_payload()
@@ -412,9 +442,11 @@ class Repository(Generic[E]):
         return self._prepare("PATCH", f"{self.path}/{_id(entity_id)}", payload, execute)
 
     def update(self, entity_id: str, patch: Patch[E]) -> None:
+        """Send selected patch fields to the entity ID; return None after success."""
         self.prepare_update(entity_id, patch).execute()
 
     def delete(self, entity_id: str) -> None:
+        """Delete the entity by ID immediately; return None after success."""
         self.client._send(
             "DELETE", f"{self.path}/{_id(entity_id)}", None, self.client.context.headers()
         )
@@ -422,27 +454,35 @@ class Repository(Generic[E]):
 
 @dataclass(frozen=True, eq=False)
 class Query(Generic[E]):
+    """An immutable query description; building it never sends HTTP requests."""
+
     repository: Repository[E]
     criteria: Criteria[E]
 
     def where(self, *predicates: Predicate) -> Query[E]:
+        """Return a query with additional predicates combined using AND."""
         return replace(self, criteria=self.criteria.where(*predicates))
 
     def filter(self, *predicates: Predicate) -> Query[E]:
+        """Alias for where(); return a query with additional AND-combined predicates."""
         return self.where(*predicates)
 
     def order_by(self, *sorts: Sort) -> Query[E]:
+        """Return a query with sort expressions appended in priority order."""
         return replace(self, criteria=self.criteria.order_by(*sorts))
 
     def limit(self, size: int) -> Query[E]:
+        """Return a query with a positive per-request result limit; not for iter()."""
         return replace(self, criteria=self.criteria.limit(size))
 
     def load(self, association: type[R], *, criteria: Criteria[R] | None = None) -> Query[E]:
+        """Request association data, optionally restricted by related-entity criteria."""
         return replace(self, criteria=self.criteria.load(association, criteria=criteria))
 
     def prepare(
         self, *, page: int = 1, size: int = 100, count: CountMode = CountMode.NONE
     ) -> PreparedRequest[SearchResult[E]]:
+        """Snapshot a search request without sending it; pages and sizes start at one."""
         _positive(page, "page")
         _positive(size, "size")
         body = self.criteria.to_payload()
@@ -484,13 +524,16 @@ class Query(Generic[E]):
     def fetch_page(
         self, *, page: int = 1, size: int = 100, count: CountMode = CountMode.NONE
     ) -> SearchResult[E]:
+        """Execute a search and return one typed page; totals are omitted by default."""
         return self.prepare(page=page, size=size, count=count).execute()
 
     def first(self) -> E | None:
+        """Fetch at most one matching entity; return None when there is no match."""
         items = self.limit(1).fetch_page().items
         return items[0] if items else None
 
     def one(self) -> E:
+        """Fetch one match or raise CardinalityError for zero or multiple matches."""
         items = self.limit(2).fetch_page().items
         if len(items) != 1:
             raise CardinalityError(
@@ -499,6 +542,7 @@ class Query(Generic[E]):
         return items[0]
 
     def ids(self, *, page: int = 1, size: int = 100) -> list[str]:
+        """Search for one page of matching IDs without loading entity associations."""
         _positive(page, "page")
         _positive(size, "size")
         body = self.criteria.to_payload()

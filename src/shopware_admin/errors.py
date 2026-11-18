@@ -32,6 +32,8 @@ class TransportError(ShopwareError):
 
 
 class ShopwareApiError(ShopwareError):
+    """An unsuccessful API response with HTTP status and structured error entries."""
+
     def __init__(self, method: str, path: str, status: int, errors: list[dict[str, Any]]):
         self.method = method
         self.path = path
