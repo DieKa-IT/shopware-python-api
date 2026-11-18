@@ -49,8 +49,14 @@ Associations to entities outside this selection are omitted with a notice.
 ## Extend the public model
 
 Shopware exposes customer VAT IDs through the API as `vatIds`, even when the
-field is missing from the shop's OpenAPI documentation. This is an existing API
-field, so you do not need to create a custom field in Shopware.
+field is missing from the shop's OpenAPI documentation. In Shopware's
+[CustomerDefinition](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerDefinition.php#L128),
+`ListField('vat_ids', 'vatIds', StringField::class)` has both `ApiAware` and
+`IgnoreInOpenapiSchema` flags. `vat_ids` is the storage name; `vatIds` is the API
+property. The [CustomerEntity](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerEntity.php#L333)
+getter and setter document a nullable array of strings.
+
+This is an existing API field, so you do not need to create a custom field in Shopware.
 
 Check your actual response and generated model first. If `vatIds` is not already
 mapped, keep the generated base import in `my_shop_api/models/customer.py` and add:
