@@ -2,6 +2,52 @@
 
 [Documentation](../index.md) · [Getting started](../../tools/scaffolder/README.md)
 
+## What each command does
+
+The scaffolder works with **schemas**: descriptions of your shop's entities,
+fields, types, and associations. These describe the API structure, not the
+customer or product records stored in the shop.
+
+| Command | Reads | Produces | Use it when you want to… |
+| --- | --- | --- | --- |
+| `list` | Schemas from a live shop or saved directory | Entity names printed to the terminal | Find which entities you can select for generation. |
+| `snapshot` | Schemas from a live shop | JSON schema files and an ownership manifest on disk | Save the API structure for offline generation or repeatable CI runs. |
+| `generate` | Schemas from a live shop or saved directory | Python model classes, public extension files, and optionally a context | Create or update the Python code your application imports. |
+
+**`snapshot` saves the input; `generate` creates Python code from that input.**
+A snapshot contains no generated Python models and is not a backup of shop data.
+You can generate code directly from a live shop without taking a snapshot first.
+
+For example, save your shop's schemas, then generate a customer model from them:
+
+```bash
+shopware-admin-scaffold snapshot \
+  --url https://shop.example --output ./schemas/shopware
+
+shopware-admin-scaffold generate \
+  --schema-dir ./schemas/shopware \
+  --output ./src/my_shop_api --package my_shop_api \
+  --entity customer --context ShopContext
+```
+
+The first command writes schema JSON under `schemas/shopware`. The second reads
+that directory without contacting the shop and writes importable Python code
+under `src/my_shop_api`. You can reuse the saved schemas for subsequent generation
+runs; they change only when you explicitly replace the snapshot.
+
+To generate directly from the current live schemas instead:
+
+```bash
+shopware-admin-scaffold generate \
+  --url https://shop.example \
+  --output ./src/my_shop_api --package my_shop_api \
+  --entity customer --context ShopContext
+```
+
+This reads schemas over HTTP and generates Python code without saving a separate
+schema bundle. Generation creates declarations; application code later uses those
+models with `shopware-admin` to query or update actual records.
+
 ## Command syntax
 
 ```text
@@ -49,6 +95,8 @@ CLI source discards both configured source keys before applying the selected one
 
 ## `list` options
 
+Inspect the available entity catalog without creating schema files or Python code.
+
 In addition to the shared options:
 
 | Argument | Value | Required? / default | Meaning |
@@ -62,6 +110,11 @@ remain visible in listings; selecting them for generation fails.
 
 ## `snapshot` options
 
+Download and save the shop's OpenAPI and DAL schemas as `openapi.json` and
+`entity-schema.json`, together with an ownership manifest. This preserves the
+schema input for later offline generation. It does not create Python code or
+export customer/product records.
+
 In addition to the shared options:
 
 | Argument | Value | Required? / default | Meaning |
@@ -73,6 +126,12 @@ In addition to the shared options:
 options such as `--package`, `--entity`, `--dry-run`, or `--check`.
 
 ## `generate` options
+
+Build Python code for selected entities using either live schemas (`--url`) or
+saved schemas (`--schema-dir`). The output includes generated model bases and
+public subclasses for handwritten extensions. `--context` also creates a context
+with named entity sets. See [generated files and overwrite behavior](#generated-files-and-overwrite-behavior)
+for the output layout and regeneration rules.
 
 In addition to the shared options:
 
