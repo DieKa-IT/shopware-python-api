@@ -18,8 +18,8 @@ def respond(request: httpx.Request) -> httpx.Response:
             "data": [
                 {
                     "id": "1" * 32,
-                    "name": "O-ring 20x3",
-                    "productNumber": "ARC-4711",
+                    "name": "Green T-shirt",
+                    "productNumber": "DEMO-TSHIRT-GREEN",
                     "stock": 12,
                     "customFields": {"erp_reference": "ERP-4711"},
                     "manufacturer": {"id": "2" * 32, "name": "Example"},
@@ -38,7 +38,7 @@ def main() -> None:
         transport=httpx.MockTransport(respond),
     ) as shop:
         query = (
-            shop.products.where(Product.name.contains("ring"), Product.stock > 0)
+            shop.products.where(Product.name.contains("T-shirt"), Product.stock > 0)
             .where(Product.manufacturer.name == "Example")
             .order_by(Product.name.asc(), Product.id.asc())
             .load(Product.manufacturer)

@@ -79,11 +79,13 @@ def test_nested_dotted_paths_preserve_the_root_entity():
 def test_collection_filter_and_nested_load_filter_are_distinct():
     payload = (
         Criteria(Product)
-        .where(Product.categories.name == "Seals")
+        .where(Product.categories.name == "T-shirts")
         .load(Product.categories, criteria=Criteria(Category).where(Category.active == True))
         .to_payload()
     )
-    assert payload["filter"] == [{"type": "equals", "field": "categories.name", "value": "Seals"}]
+    assert payload["filter"] == [
+        {"type": "equals", "field": "categories.name", "value": "T-shirts"}
+    ]
     assert payload["associations"]["categories"]["filter"] == [
         {"type": "equals", "field": "active", "value": True},
     ]
@@ -92,7 +94,7 @@ def test_collection_filter_and_nested_load_filter_are_distinct():
 def test_self_referencing_paths_can_be_chained_and_loaded():
     payload = (
         Criteria(Product)
-        .where(Product.categories.parent.parent.name == "Seals")
+        .where(Product.categories.parent.parent.name == "T-shirts")
         .load(Product.categories.parent.parent)
         .to_payload()
     )
@@ -138,7 +140,7 @@ def test_instance_associations_still_return_entities_and_do_not_trigger_http():
     product = Product.from_data(
         {
             "manufacturer": {"name": "Example", "media": {"path": "media/example.png"}},
-            "categories": [{"name": "Seals", "active": True}],
+            "categories": [{"name": "T-shirts", "active": True}],
         }
     )
     assert isinstance(product.manufacturer, Manufacturer)
