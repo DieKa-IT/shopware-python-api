@@ -6,7 +6,7 @@ Generate a customer model from your shop, then map `vatIds`: a field exposed by
 the API that can be missing from its OpenAPI documentation.
 You need Python 3.12+, uv, a checkout of this repository, and a reachable Shopware
 Admin API with schema access. This exercise reads schemas and prepares a patch;
-it does not write product data.
+it does not write customer data.
 
 ## Install the development tools
 
@@ -48,15 +48,30 @@ Associations to entities outside this selection are omitted with a notice.
 
 ## Extend the public model
 
-Shopware exposes customer VAT IDs through the API as `vatIds`, even when the
-field is missing from the shop's OpenAPI documentation. In Shopware's
-[CustomerDefinition](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerDefinition.php#L128),
-`ListField('vat_ids', 'vatIds', StringField::class)` has both `ApiAware` and
-`IgnoreInOpenapiSchema` flags. `vat_ids` is the storage name; `vatIds` is the API
-property. The [CustomerEntity](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerEntity.php#L333)
-getter and setter document a nullable array of strings.
+Shopware can mark a DAL field as API-aware while explicitly excluding it from
+OpenAPI. For example, [Shopware's `CustomerDefinition`](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerDefinition.php#L128)
+declares customer VAT IDs as follows (formatting expanded):
 
-This is an existing API field, so you do not need to create a custom field in Shopware.
+```php
+(new ListField('vat_ids', 'vatIds', StringField::class))
+    ->addFlags(new ApiAware(), new IgnoreInOpenapiSchema())
+    ->setDescription('Unique identity of VAT.'),
+```
+
+- `ApiAware` exposes the field through the API.
+- `IgnoreInOpenapiSchema` leaves it out of the generated OpenAPI schema.
+- `vat_ids` is the storage name; `vatIds` is the API property.
+- `ListField` with `StringField::class` describes a list of strings.
+
+The scaffolder starts with fields listed in OpenAPI and enriches them with DAL
+metadata. It does not generate fields that are absent from OpenAPI, even if they
+are API-aware and present in DAL metadata. Add these fields manually to your
+public Python model. Regeneration preserves that handwritten extension.
+
+The [CustomerEntity](https://github.com/shopware/shopware/blob/28db6ae4279e0137e697813de695572084c19d70/src/Core/Checkout/Customer/CustomerEntity.php#L333)
+getter and setter document a nullable array of strings, so the Python type below
+also permits `None`. This is an existing API field; no Shopware custom field
+needs to be created.
 
 Check your actual response and generated model first. If `vatIds` is not already
 mapped, keep the generated base import in `my_shop_api/models/customer.py` and add:

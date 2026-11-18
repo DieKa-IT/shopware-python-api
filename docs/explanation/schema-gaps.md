@@ -4,8 +4,12 @@
 
 A shop's API behavior, its exported schemas, and your Python model describe related
 but different things. A field may be reachable through the API without being
-fully described in the exported metadata. Dynamic custom-field names and plugin
-extensions make this especially relevant.
+fully described in the exported metadata. Shopware can explicitly combine `ApiAware` with `IgnoreInOpenapiSchema` on a
+field: the API exposes it, but OpenAPI omits it. Customer `vatIds` is an example.
+The scaffolder enumerates OpenAPI fields and enriches them with DAL metadata;
+fields absent from OpenAPI need handwritten mappings. See the
+[PHP declaration and Python mapping](../how-to/add-model-fields.md#map-an-api-aware-field-omitted-from-openapi).
+Dynamic custom-field names and plugin extensions can also require handwritten mappings.
 
 The scaffolder combines OpenAPI and DAL metadata to produce a useful starting
 point. It cannot infer every application-specific field or guarantee that every
