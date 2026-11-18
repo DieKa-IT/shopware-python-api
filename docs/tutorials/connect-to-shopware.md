@@ -7,20 +7,19 @@ scaffold a product model, and query real products. This tutorial reads schemas a
 products; it does not create, update, or delete shop records.
 
 You need Python 3.12+, [uv](https://docs.astral.sh/uv/getting-started/installation/),
-Git, a reachable Shopware 6 shop, and access to manage integrations in its
+a reachable Shopware 6 shop, and access to manage integrations in its
 Administration. Use a development shop to evaluate the alpha; see [known gaps](../known-gaps.md).
 Commands below use a POSIX shell such as Bash or Zsh.
 
 ## 1. Install the library and scaffolder
 
-Create an application project and install both packages from a source checkout:
+Create an application project and install both released packages from PyPI:
 
 ```bash
 uv init --python 3.12 shopware-demo
 cd shopware-demo
-git clone --branch master https://github.com/DieKa-IT/shopware-python-api.git
-uv add --editable ./shopware-python-api
-uv add --dev --editable ./shopware-python-api/tools/scaffolder
+uv add --prerelease allow shopware-admin
+uv add --dev --prerelease allow shopware-admin-scaffold
 uv run shopware-admin-scaffold --version
 ```
 
@@ -28,9 +27,8 @@ The distribution `shopware-admin` supplies the runtime imported as `shopware_adm
 `shopware-admin-scaffold` supplies the generator command. The generator is a
 development dependency; generated code imports only the runtime.
 
-This source-install route works without relying on package registry availability.
-Keep running all remaining commands from `shopware-demo`, not from the checkout
-or `tools/scaffolder` directory. Generated models will belong to your application.
+`--prerelease allow` permits the current alpha releases. Keep running all remaining
+commands from `shopware-demo`. Generated models will belong to your application.
 
 ## 2. Create a Shopware integration
 
