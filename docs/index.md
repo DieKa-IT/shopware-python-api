@@ -10,6 +10,30 @@ These docs follow [Diátaxis](https://diataxis.fr/): tutorials teach through a g
 experience, how-to guides solve tasks, reference describes behavior, and explanation
 covers the reasons behind the design.
 
+## Implemented API operations
+
+Repositories provide the following operations for supported entity models.
+Here `products` means `shop.products`; routes use the model's declared API route.
+
+| Operation | Python interface | HTTP endpoint | Documentation |
+| --- | --- | --- | --- |
+| Search entities | `products.where(...).fetch_page()` | `POST /api/search/{route}` | [Query guide](how-to/query-products.md) |
+| Search IDs only | `products.search().ids()` | `POST /api/search-ids/{route}` | [Query reference](reference/queries.md) |
+| Read one entity by ID | `products.get(entity_id)` | `GET /api/{route}/{id}` | [Query reference](reference/queries.md) |
+| Create an entity | `products.create(entity)` | `POST /api/{route}` | [Writes reference](reference/writes.md) |
+| Update selected fields | `products.update(entity_id, patch)` | `PATCH /api/{route}/{id}` | [Patch guide](how-to/patch-fields.md) |
+| Delete an entity | `products.delete(entity_id)` | `DELETE /api/{route}/{id}` | [Writes reference](reference/writes.md) |
+| Call other endpoints directly | `shop.request(method, path, ...)` | Caller-supplied `/api/` path | [Client reference](reference/client.md) |
+
+`get()` returns a typed entity or `None` for HTTP 404. `create()` returns the new
+ID after success. `update()` and `delete()` return `None` after success.
+`prepare_get()`, `prepare_create()`, and `prepare_update()` allow previews before
+execution; there is currently no `prepare_delete()` helper.
+
+Raw requests share authentication and transport handling but do not provide typed
+endpoint-specific payloads or results. Specialized action helpers, including a
+typed sync-operation builder, are still missing. See [known gaps](known-gaps.md).
+
 ## Tutorials — learn by doing
 
 Start here if you are new to the library.
