@@ -16,7 +16,7 @@ jobs:
     needs: check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           persist-credentials: false
       - uses: astral-sh/setup-uv@v7
@@ -50,13 +50,13 @@ jobs:
           "$RUNNER_TEMP/release-smoke/bin/python" -c "import shopware_admin; import shopware_admin_scaffold"
           "$RUNNER_TEMP/release-smoke/bin/shopware-admin-scaffold" --version
       - name: Store library distributions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: runtime-distributions
           path: dist/runtime/
           if-no-files-found: error
       - name: Store scaffolder distributions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: scaffolder-distributions
           path: dist/scaffolder/
@@ -73,7 +73,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: runtime-distributions
           path: dist/
@@ -91,7 +91,7 @@ jobs:
     permissions:
       id-token: write
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v7
         with:
           name: scaffolder-distributions
           path: dist/
