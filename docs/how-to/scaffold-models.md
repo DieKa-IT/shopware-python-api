@@ -61,5 +61,5 @@ reconciliation; generation does not automatically delete stale files.
 
 For CI, pin the generator, use a saved schema bundle, and run `--check`. Exit 0
 means current, 1 means generated changes or missing public files, and 2 means an
-error. See the [scaffolder reference](../../tools/scaffolder/README.md) for overrides,
+error. See the [scaffolder reference](../reference/scaffolder.md) for overrides,
 snapshot replacement, ownership rules, and all CLI details.

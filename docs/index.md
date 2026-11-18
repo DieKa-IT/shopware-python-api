@@ -31,7 +31,7 @@ These guides assume you have a model and can construct a context.
 - [Queries, pagination, execution, and field presence](reference/queries.md)
 - [Writes and prepared requests](reference/writes.md)
 - [Client, authentication, request context, and transport](reference/client.md)
-- [Scaffolder CLI and configuration](../tools/scaffolder/README.md)
+- [Scaffolder CLI and configuration](reference/scaffolder.md)
 
 ## Explanation — understand the design
 

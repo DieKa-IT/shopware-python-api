@@ -62,7 +62,7 @@ uv run python -m examples.demo
   [Scaffold and regenerate](docs/how-to/scaffold-models.md)
 - **Look up:** [Models](docs/reference/models.md) ·
   [Queries](docs/reference/queries.md) · [Writes](docs/reference/writes.md) ·
-  [Client](docs/reference/client.md) · [Scaffolder](tools/scaffolder/README.md)
+  [Client](docs/reference/client.md) · [Scaffolder](docs/reference/scaffolder.md)
 - **Understand:** [Why typed Python](docs/explanation/why-typed-python.md) ·
   [Schema gaps and model ownership](docs/explanation/schema-gaps.md) ·
   [Explicit writes and field presence](docs/explanation/explicit-writes.md)
