@@ -2,6 +2,10 @@
 
 [Documentation](../index.md)
 
+**Alpha interface:** the current patch API is cumbersome and needs major reworking.
+The examples describe its present behavior; patch construction may change incompatibly.
+See [known gaps](../known-gaps.md#patch-api-needs-major-reworking).
+
 Examples assume an authenticated `shop` context with a `products` entity set;
 `products` is shorthand for `shop.products`. See [models and contexts](models.md).
 

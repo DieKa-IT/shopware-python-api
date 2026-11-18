@@ -15,6 +15,9 @@ Generated bases and handwritten public models live in separate files. Add custom
 fields and behavior to your public subclasses; regeneration preserves those files.
 The generator is a development tool. Your application imports only the runtime.
 
+See [known gaps](../../docs/known-gaps.md) for schema coverage and compatibility
+limits. Generating a model does not imply typed support for every API endpoint.
+
 ## Get started
 
 Requires Python 3.12+ and uv. From `tools/scaffolder` in a checkout of this repository:

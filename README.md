@@ -6,6 +6,9 @@ Typed Python models, queries, and explicit writes for the Shopware 6 Admin API.
 > backward compatibility. Compatibility with individual Shopware versions and
 > plugins is still being validated. Not yet recommended for production use.
 
+See [known gaps](docs/known-gaps.md) before adopting the alpha: endpoint coverage
+is incomplete, and the current patch API needs major reworking.
+
 ## Why this library?
 
 Shopware integrations often repeat field names in dictionaries and query payloads.

@@ -2,6 +2,10 @@
 
 [Documentation](../index.md)
 
+**Alpha interface:** the current patch API is cumbersome and needs major reworking.
+The examples describe its present behavior; patch construction may change incompatibly.
+See [known gaps](../known-gaps.md#patch-api-needs-major-reworking).
+
 Use a patch when updating an existing entity. Assume `shop` is an authenticated
 context, `Product` is your public model, and `product_id` identifies the product.
 

@@ -3,6 +3,9 @@
 `shopware-admin` expresses Shopware API contracts through Python models. Use the
 separate scaffolder to generate an initial model, then refine it for your shop.
 
+Read [known gaps and alpha status](known-gaps.md) for incomplete endpoint coverage,
+the patch API's planned redesign, and compatibility limits.
+
 These docs follow [Diátaxis](https://diataxis.fr/): tutorials teach through a guided
 experience, how-to guides solve tasks, reference describes behavior, and explanation
 covers the reasons behind the design.
