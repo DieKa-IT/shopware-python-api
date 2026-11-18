@@ -38,8 +38,8 @@ typed sync-operation builder, are still missing. See [known gaps](known-gaps.md)
 
 Start here if you are new to the library.
 
-- [Your first typed query](tutorials/first-query.md): declare a model, query a mock
-  API, inspect typed results, and preview a patch without a live shop.
+- [Refresh a T-shirt collection](tutorials/first-query.md): query, create, retrieve,
+  update prices, and delete products in a mock shop.
 - [Scaffold and extend models](tutorials/scaffold-and-extend.md): generate models
   from a shop and add a VAT ID mapping missing from OpenAPI.
 

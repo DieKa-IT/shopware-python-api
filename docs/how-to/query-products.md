@@ -9,9 +9,8 @@ public models. The examples use fields declared in the repository's
 ## Filter and sort
 
 ```python
-query = (
-    shop.products.where(Product.stock > 0, Product.name.contains("ring"))
-    .order_by(Product.name.asc(), Product.id.asc())
+query = shop.products.where(Product.stock > 0, Product.name.contains("ring")).order_by(
+    Product.name.asc(), Product.id.asc()
 )
 result = query.fetch_page(page=1, size=100)
 ```
@@ -31,10 +30,7 @@ operand checking for equality; Python's `==` protocol is more permissive.
 ## Filter through an association and return its data
 
 ```python
-query = (
-    shop.products.where(Product.manufacturer.name == "Example")
-    .load(Product.manufacturer)
-)
+query = shop.products.where(Product.manufacturer.name == "Example").load(Product.manufacturer)
 ```
 
 The filter selects products. `.load()` requests the related manufacturer data.

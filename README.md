@@ -47,17 +47,17 @@ Requires Python 3.12+. The distribution is `shopware-admin`; imports use `shopwa
 pip install shopware-admin
 ```
 
-Follow [your first typed query](docs/tutorials/first-query.md) for a complete example
+Follow [refresh a T-shirt collection](docs/tutorials/first-query.md) for a complete example
 that runs without credentials or a shop. To try the repository demo with uv:
 
 ```bash
 uv sync --locked
-uv run python -m examples.demo
+uv run python -m examples.tshirt_collection
 ```
 
 ## Documentation
 
-- **Learn:** [First typed query](docs/tutorials/first-query.md) ·
+- **Learn:** [T-shirt collection tutorial](docs/tutorials/first-query.md) ·
   [Scaffold and extend models](docs/tutorials/scaffold-and-extend.md)
 - **Do:** [Query products](docs/how-to/query-products.md) ·
   [Patch fields](docs/how-to/patch-fields.md) ·

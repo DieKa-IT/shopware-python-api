@@ -81,6 +81,7 @@ from shopware_admin import Field, api_field
 
 # Keep the existing CustomerBase import from the generated file.
 
+
 class Customer(CustomerBase):
     vat_ids: Field[list[str] | None] = api_field("vatIds", default=None)
 ```

@@ -12,11 +12,7 @@ context, `Product` is your public model, and `product_id` identifies the product
 ## Select the values to send
 
 ```python
-patch = (
-    shop.products.patch()
-    .set(Product.stock, 25)
-    .set(Product.parent_id, None)
-)
+patch = shop.products.patch().set(Product.stock, 25).set(Product.parent_id, None)
 request = shop.products.prepare_update(product_id, patch)
 print(request.method, request.path, request.json)
 ```
