@@ -1,10 +1,6 @@
-name: Check and publish packages
+name: Publish packages
 
 on:
-  push:
-    branches: [master]
-  pull_request:
-  workflow_dispatch:
   release:
     types: [published]
 
@@ -13,31 +9,7 @@ permissions:
 
 jobs:
   check:
-    name: Check ${{ matrix.project }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        project: [".", "tools/scaffolder"]
-    defaults:
-      run:
-        working-directory: ${{ matrix.project }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-      - uses: astral-sh/setup-uv@v7
-        with:
-          python-version: "3.12"
-      - name: Install dependencies
-        run: uv sync --locked
-      - name: Run tests and checks
-        run: |
-          uv run --locked pytest
-          uv run --locked mypy
-          uv run --locked pyright
-          uv run --locked ruff check .
-          uv run --locked ruff format --check .
+    uses: ./.github/workflows/test.yml
 
   build:
     name: Build distributions
@@ -51,7 +23,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check release tag matches both package versions
-        if: github.event_name == 'release'
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: |
