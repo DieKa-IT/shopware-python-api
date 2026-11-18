@@ -35,14 +35,18 @@ def _snapshot(value: Any) -> str:
 
 @dataclass(frozen=True, eq=False)
 class Predicate:
+    """An immutable filter; combine with &, |, and ~ rather than Python booleans."""
+
     entity: str
     _json: str
 
     @classmethod
     def build(cls, entity: str, payload: dict[str, Any]) -> Predicate:
+        """Snapshot a raw Shopware filter payload for the specified root entity."""
         return cls(entity, _snapshot(payload))
 
     def to_payload(self) -> dict[str, Any]:
+        """Return a fresh copy of the compiled Shopware filter."""
         return cast(dict[str, Any], json.loads(self._json))
 
     def _combine(self, other: Predicate, operator: str) -> Predicate:
@@ -58,12 +62,15 @@ class Predicate:
         )
 
     def __and__(self, other: Predicate) -> Predicate:
+        """Combine two predicates from the same root entity with AND."""
         return self._combine(other, "AND")
 
     def __or__(self, other: Predicate) -> Predicate:
+        """Combine two predicates from the same root entity with OR."""
         return self._combine(other, "OR")
 
     def __invert__(self) -> Predicate:
+        """Negate this predicate using a Shopware not filter."""
         return Predicate.build(
             self.entity, {"type": "not", "operator": "AND", "queries": [self.to_payload()]}
         )
@@ -74,17 +81,22 @@ class Predicate:
 
 @dataclass(frozen=True)
 class Sort:
+    """An immutable field sort with direction and optional natural ordering."""
+
     entity: str
     field: str
     order: str
     natural: bool = False
 
     def to_payload(self) -> dict[str, Any]:
+        """Return the Shopware sorting payload for this expression."""
         return {"field": self.field, "order": self.order, "naturalSorting": self.natural}
 
 
 @dataclass(frozen=True, eq=False)
 class FieldExpression(Generic[T]):
+    """A typed model field path used in filters, sorts, and direct-field patches."""
+
     root: type[Entity]
     path: str
     descriptor: Field[T]
@@ -106,9 +118,11 @@ class FieldExpression(Generic[T]):
         return self._predicate("equals", value)
 
     def __eq__(self, value: object) -> Predicate:  # type: ignore[override]
+        """Build an equality filter; use eq() for stricter static operand checking."""
         return self._predicate("equals", value)
 
     def __ne__(self, value: object) -> Predicate:  # type: ignore[override]
+        """Build a negated equality filter."""
         return ~self._predicate("equals", value)
 
     def _require_type(self, allowed: tuple[type[Any], ...]) -> None:
@@ -136,18 +150,23 @@ class FieldExpression(Generic[T]):
         )
 
     def __lt__(self, value: T) -> Predicate:
+        """Build an exclusive upper bound for a numeric or datetime field."""
         return self._range("lt", value)
 
     def __le__(self, value: T) -> Predicate:
+        """Build an inclusive upper bound for a numeric or datetime field."""
         return self._range("lte", value)
 
     def __gt__(self, value: T) -> Predicate:
+        """Build an exclusive lower bound for a numeric or datetime field."""
         return self._range("gt", value)
 
     def __ge__(self, value: T) -> Predicate:
+        """Build an inclusive lower bound for a numeric or datetime field."""
         return self._range("gte", value)
 
     def in_(self, values: list[T] | tuple[T, ...]) -> Predicate:
+        """Match any value in a nonempty list or tuple of typed field values."""
         from .mapping import _encode
 
         if not values:
@@ -162,24 +181,30 @@ class FieldExpression(Generic[T]):
         )
 
     def contains(self, value: str) -> Predicate:
+        """Match a string field containing the supplied substring."""
         self._require_type((str,))
         return self._predicate("contains", value)
 
     def startswith(self, value: str) -> Predicate:
+        """Match a string field beginning with the supplied prefix."""
         self._require_type((str,))
         return self._predicate("prefix", value)
 
     def endswith(self, value: str) -> Predicate:
+        """Match a string field ending with the supplied suffix."""
         self._require_type((str,))
         return self._predicate("suffix", value)
 
     def is_null(self) -> Predicate:
+        """Match JSON null; the field declaration must permit None."""
         return self._predicate("equals", None)
 
     def asc(self, *, natural: bool = False) -> Sort:
+        """Sort ascending, optionally using natural ordering."""
         return Sort(self.root.__entity__, self.path, "ASC", natural)
 
     def desc(self, *, natural: bool = False) -> Sort:
+        """Sort descending, optionally using natural ordering."""
         return Sort(self.root.__entity__, self.path, "DESC", natural)
 
     def __bool__(self) -> Never:

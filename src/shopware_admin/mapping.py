@@ -202,6 +202,8 @@ class _MappedField:
 
 
 class Field(_MappedField, Generic[T]):
+    """A mapped value on instances and a typed query expression on model classes."""
+
     @overload
     def __get__(self, instance: None, owner: type[Entity]) -> FieldExpression[T]: ...
 
@@ -278,6 +280,8 @@ class _AssociationField(_MappedField):
 
 
 class ToOne(_AssociationField, Generic[E]):
+    """A single related entity or None on instances; a query path on model classes."""
+
     @overload
     def __get__(self, instance: None, owner: type[Entity]) -> type[E]: ...
 
@@ -292,6 +296,8 @@ class ToOne(_AssociationField, Generic[E]):
 
 
 class ToMany(_AssociationField, Generic[E]):
+    """A loaded entity list on instances; raises FieldNotLoadedError when unloaded."""
+
     many = True
 
     @overload
@@ -317,7 +323,11 @@ def api_field(
     default: None | _RequiredArgument = _REQUIRED_ARGUMENT,
     init: bool = True,
 ) -> Field[Any]:
-    """Use default=None to allow omission; only explicitly supplied values are serialized."""
+    """Map a typed field to an API name or JSON path and optional criteria path.
+
+    default=None permits omission without inserting a value or making the type nullable.
+    writable controls writes; required_on_create checks creation values separately.
+    """
     path = json_path if json_path is not None else ((api_name,) if api_name else ())
     return Field(
         path,
@@ -338,6 +348,7 @@ def to_one(
     default: None = None,
     init: Literal[False] = False,
 ) -> ToOne[Any]:
+    """Declare a to-one association; read-only and excluded from constructors by default."""
     return ToOne(
         json_path if json_path is not None else (api_name,),
         criteria_path if criteria_path is not None else api_name,
@@ -357,6 +368,7 @@ def to_many(
     default: None = None,
     init: Literal[False] = False,
 ) -> ToMany[Any]:
+    """Declare a to-many association; unloaded collections raise FieldNotLoadedError."""
     return ToMany(
         json_path if json_path is not None else (api_name,),
         criteria_path if criteria_path is not None else api_name,
@@ -371,6 +383,8 @@ def to_many(
     kw_only_default=True, eq_default=False, field_specifiers=(api_field, to_one, to_many)
 )
 class Entity:
+    """Base for typed API models declaring entity identity, route, and mapped fields."""
+
     __entity__: ClassVar[str] = ""
     __route__: ClassVar[str] = ""
     __fields__: ClassVar[dict[str, _MappedField]] = {}
@@ -393,6 +407,7 @@ class Entity:
         cls.__fields__ = fields
 
     def __init__(self, **values: Any):
+        """Validate supplied field values, keeping omitted values absent from writes."""
         self._values: dict[str, Any] = {}
         self._extras: dict[str, Any] = {}
         for name, field in self.__fields__.items():
@@ -407,6 +422,7 @@ class Entity:
     def from_data(
         cls: type[E], data: Mapping[str, Any], *, registry: ModelRegistry | None = None
     ) -> E:
+        """Hydrate a response object, preserving field presence and unknown raw values."""
         if not isinstance(data, Mapping):
             raise MappingError(f"{cls.__name__} requires a JSON object")
         registry = registry if registry is not None else ModelRegistry([cls])
@@ -447,6 +463,7 @@ class Entity:
         return descriptor.name in self._values
 
     def to_payload(self) -> dict[str, Any]:
+        """Serialize supplied writable fields only; explicit None becomes JSON null."""
         result: dict[str, Any] = {}
         for name, value in self._values.items():
             field = self.__fields__[name]
@@ -464,6 +481,7 @@ class ModelRegistry:
             self.register(model)
 
     def register(self, model: type[Entity]) -> None:
+        """Register a public model, rejecting incompatible types for the same entity."""
         if model.__query_path__ is not None:
             raise MappingError(
                 "Use the declared entity model for repositories, not an association path"
@@ -479,6 +497,7 @@ class ModelRegistry:
             self._models[model.__entity__] = model
 
     def resolve(self, model: type[E]) -> type[E]:
+        """Resolve an association target to its registered compatible public subclass."""
         resolved = self._models.get(model.__entity__, model)
         if not issubclass(resolved, model):
             raise MappingError(f"Registered model is incompatible with {model.__name__}")

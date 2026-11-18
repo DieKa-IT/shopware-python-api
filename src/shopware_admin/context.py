@@ -42,6 +42,7 @@ class EntitySet(Generic[E_co]):
 
     @property
     def model(self) -> type[E_co]:
+        """The public entity model registered by this declaration."""
         return self._model
 
     @overload
