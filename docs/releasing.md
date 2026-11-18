@@ -42,15 +42,20 @@ successful upload creates the PyPI project; the name must be available. If the
 project already exists and you own it, add the publisher under that project's
 **Manage → Publishing** settings instead.
 
-## Check everything without publishing
+## Run tests without publishing
 
-Open the repository's **Actions** tab, select **Check and publish packages**, and
-choose **Run workflow** on `master`. Pushes to `master` and pull requests also run
-the checks automatically.
+Open the repository's **Actions** tab, select **Test packages**, and choose
+**Run workflow** on `master`. Pushes to `master` and pull requests also run this
+workflow automatically.
 
-These runs test both packages, check types, lint and formatting, build the wheel
-and source archives, and validate package metadata and README rendering. They do
-not upload to PyPI. Download the built files from the workflow run's artifacts.
+The reusable `.github/workflows/test.yml` workflow tests both packages and checks
+types, lint, and formatting. It does not build or publish packages.
+
+The separate `.github/workflows/publish.yml` workflow starts only when a GitHub
+Release is published. It first calls the same testing workflow for the exact
+release code. After those checks pass, it builds both packages, validates their
+metadata and installation, and publishes them. The built distributions are also
+available as artifacts on the release workflow run.
 
 ## Publish the first release
 
@@ -67,7 +72,7 @@ not upload to PyPI. Download the built files from the workflow run's artifacts.
    the release, and mark it as a **pre-release**, because this is an alpha.
 6. Click **Publish release**. Saving a draft or creating a tag alone does not
    upload packages.
-7. Open **Actions** and watch **Check and publish packages**. It checks and builds
+7. Open **Actions** and watch **Publish packages**. It checks and builds
    both packages, then uploads the runtime first and the scaffolder second.
    Approve the jobs if you configured required reviewers on the environments.
 
