@@ -1,5 +1,9 @@
 # shopware-admin-scaffold
 
+[Library documentation](../../docs/index.md) ·
+[Scaffolding tutorial](../../docs/tutorials/scaffold-and-extend.md) ·
+[Regeneration guide](../../docs/how-to/scaffold-models.md)
+
 > **Early alpha — work in progress.** Available for experimentation and evaluation.
 > APIs and generated code may change without backward compatibility. Compatibility
 > with individual Shopware versions and plugins is still being validated.

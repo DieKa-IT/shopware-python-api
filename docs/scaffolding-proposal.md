@@ -45,8 +45,8 @@ shopware-admin-python/
 
 ## What the existing implementations establish
 
-The [.NET scaffolder](../../Shopware.DirectShop/tools/ShopwareApiScaffolder/README.md)
-already separates schema HTTP access, catalog parsing/selection, command-line
+The .NET scaffolder in the separate `Shopware.DirectShop` project
+(`tools/ShopwareApiScaffolder`) already separates schema HTTP access, catalog parsing/selection, command-line
 options, and C# generation. It is packaged as a tool rather than part of
 `Shopware.AdminApi`. It preserves exact API routes, discovers plugin entities,
 supports explicit selections or all entities, optionally expands one association
