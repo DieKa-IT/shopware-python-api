@@ -83,7 +83,7 @@ def contract(client: Client) -> None:
     assert_type(Product().id, str)
     assert_type(ConstructorInputs(count=1).count, int)
     assert_type(ConstructorInputs(count=1, note=None).note, str | None)
-    product = Product(name="O-ring", stock=10, erp_reference="ERP-4711")
+    product = Product(name="Green T-shirt", stock=10, erp_reference="ERP-4711")
     assert_type(product.name, str | None)
     assert_type(product.stock, int)
     assert_type(product.erp_reference, str | None)

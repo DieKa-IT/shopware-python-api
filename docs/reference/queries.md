@@ -13,7 +13,7 @@ from shopware_admin import CountMode, IntegrationAuth
 
 with ShopContext(shop_url, IntegrationAuth(client_id, client_secret)) as shop:
     query = (
-        shop.products.where(Product.name.contains("ring"), Product.stock > 0)
+        shop.products.where(Product.name.contains("T-shirt"), Product.stock > 0)
         .where(Product.manufacturer.name == "Example")
         .order_by(Product.name.asc(), Product.id.asc())
         .load(Product.manufacturer)
@@ -56,14 +56,14 @@ Association queries use normal dotted attributes:
 
 ```python
 products.where(Product.manufacturer.name == "Example")
-products.where(Product.categories.name == "Seals")
+products.where(Product.categories.name == "T-shirts")
 ```
 
 The complete models in `examples.models` also support nested paths:
 
 ```python
 products.where(Product.manufacturer.media.url.contains("example"))
-products.where(Product.categories.parent.name == "Seals")
+products.where(Product.categories.parent.name == "T-shirts")
 ```
 
 Each path retains the queried root entity. On a product query,

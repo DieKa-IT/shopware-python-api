@@ -34,14 +34,14 @@ def test_typed_values_aliases_and_manual_extensions():
             "id": "1" * 32,
             "name": None,
             "stock": 10,
-            "productNumber": "ARC-1",
+            "productNumber": "DEMO-TSHIRT-GREEN",
             "customFields": {"erp_reference": "ERP-1", "unknown": 42},
             "newServerField": "kept",
         }
     )
     assert product.name is None
     assert product.stock == 10
-    assert product.product_number == "ARC-1"
+    assert product.product_number == "DEMO-TSHIRT-GREEN"
     assert product.erp_reference == "ERP-1"
     assert product.is_loaded(Product.name)
     assert not product.is_loaded(Product.manufacturer)
@@ -147,7 +147,7 @@ def test_wire_association_validation():
     product = Product.from_data(
         {
             "manufacturer": {"id": "2" * 32, "name": "Acme"},
-            "categories": [{"id": "3" * 32, "name": "Seals", "active": True}],
+            "categories": [{"id": "3" * 32, "name": "T-shirts", "active": True}],
         }
     )
     assert isinstance(product.manufacturer, Manufacturer)

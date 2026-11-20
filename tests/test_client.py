@@ -33,8 +33,8 @@ def client_for(handler, *, auth=None, context=None):
 
 def fresh_product():
     return Product(
-        name="O-ring",
-        product_number="ARC-1",
+        name="Green T-shirt",
+        product_number="DEMO-TSHIRT-GREEN",
         stock=10,
         tax_id="2" * 32,
         price=[{"currencyId": "3" * 32, "gross": 1.19, "net": 1.0, "linked": True}],
@@ -50,7 +50,7 @@ def test_search_sends_shopware_criteria_and_returns_typed_results():
             200,
             json={
                 "total": 1,
-                "data": [{"id": ID, "name": "O-ring", "stock": 12}],
+                "data": [{"id": ID, "name": "Green T-shirt", "stock": 12}],
                 "aggregations": {"stock": {"sum": 12}},
             },
         )
@@ -146,8 +146,8 @@ def test_create_snapshots_payload_and_generates_a_stable_id_before_execution():
         assert product.id == entity_id
         assert prepared.json["id"] == entity_id
     body = json.loads(requests[0].content)
-    assert body["name"] == "O-ring"
-    assert body["productNumber"] == "ARC-1"
+    assert body["name"] == "Green T-shirt"
+    assert body["productNumber"] == "DEMO-TSHIRT-GREEN"
     assert body["id"] == entity_id
     assert len(entity_id) == 32
 
@@ -415,14 +415,14 @@ def test_raw_request_sends_binary_content_query_parameters_and_context():
         result = client.request(
             "POST",
             f"/api/_action/media/{ID}/upload",
-            params={"extension": "svg", "fileName": "ring & seal"},
+            params={"extension": "svg", "fileName": "shirt & jacket"},
             content=b"<svg />",
             content_type="image/svg+xml",
         )
     assert result is None
     request = requests[0]
     assert request.content == b"<svg />"
-    assert dict(request.url.params) == {"extension": "svg", "fileName": "ring & seal"}
+    assert dict(request.url.params) == {"extension": "svg", "fileName": "shirt & jacket"}
     assert request.headers["Content-Type"] == "image/svg+xml"
     assert request.headers["Content-Length"] == "7"
     assert request.headers["Authorization"] == "Bearer test-token"

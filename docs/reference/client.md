@@ -26,7 +26,7 @@ parameters separate from the relative `/api/` path:
 shop.request(
     "POST",
     f"/api/_action/media/{media_id}/upload",
-    params={"extension": "svg", "fileName": "o-ring"},
+    params={"extension": "svg", "fileName": "green-tshirt"},
     content=svg_bytes,
     content_type="image/svg+xml",
 )

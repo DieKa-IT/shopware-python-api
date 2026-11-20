@@ -9,7 +9,7 @@ public models. The examples use fields declared in the repository's
 ## Filter and sort
 
 ```python
-query = shop.products.where(Product.stock > 0, Product.name.contains("ring")).order_by(
+query = shop.products.where(Product.stock > 0, Product.name.contains("T-shirt")).order_by(
     Product.name.asc(), Product.id.asc()
 )
 result = query.fetch_page(page=1, size=100)

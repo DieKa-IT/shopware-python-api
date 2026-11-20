@@ -17,9 +17,9 @@ from shopware_admin import Criteria, MappingError, Patch, QueryError
             Product.id.in_(["1" * 32, "2" * 32]),
             {"type": "equalsAny", "field": "id", "value": ["1" * 32, "2" * 32]},
         ),
-        (Product.name.contains("ring"), {"type": "contains", "field": "name", "value": "ring"}),
+        (Product.name.contains("shirt"), {"type": "contains", "field": "name", "value": "shirt"}),
         (Product.name.startswith("ARC"), {"type": "prefix", "field": "name", "value": "ARC"}),
-        (Product.name.endswith("ring"), {"type": "suffix", "field": "name", "value": "ring"}),
+        (Product.name.endswith("shirt"), {"type": "suffix", "field": "name", "value": "shirt"}),
         (
             Product.erp_reference == "ERP-1",
             {"type": "equals", "field": "customFields.erp_reference", "value": "ERP-1"},
