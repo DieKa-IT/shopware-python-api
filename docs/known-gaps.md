@@ -24,21 +24,15 @@ The scaffolder generates entity models from exposed schemas, not a client method
 for every endpoint. An endpoint appearing in OpenAPI does not mean this package
 provides a typed interface for it.
 
-## Patch API needs major reworking
+## Nested and association writes
 
-The current patch interface is cumbersome to use and needs a substantial redesign.
-The repeated `.patch().set(Model.field, value)` calls describe today's implementation,
-not a settled interface. Expect breaking changes to patch construction during alpha;
-a replacement API has not been finalized.
+Explicit assignments such as `shop.products.update(product_id, Product.stock.set(25))`
+validate selected field values and send only those fields. Association writes are
+not supported, and nested JSON updates do not fetch or preserve existing server
+values. Verify server-side behavior when updating custom fields or other nested objects.
 
-Current patches validate selected field values and send only those fields. However,
-association writes are not supported, and nested JSON updates do not provide
-client-side merging or preservation of sibling keys. Verify server-side behavior
-when updating custom fields or other nested objects.
-
-The [patch guide](how-to/patch-fields.md) documents what works now. Prepared requests
-let you inspect the payload before execution, but do not resolve these usability
-or nested-write limitations.
+The [patch guide](how-to/patch-fields.md) documents the interface. Prepared requests
+let you inspect the payload before execution, but do not resolve nested-write limitations.
 
 ## Schema and model coverage
 

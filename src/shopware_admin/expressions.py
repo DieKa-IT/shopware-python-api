@@ -21,8 +21,10 @@ from typing import (
 from .errors import QueryError
 
 if TYPE_CHECKING:
+    from .criteria import Patch
     from .mapping import Entity, Field
 
+E = TypeVar("E", bound="Entity")
 T = TypeVar("T")
 
 
@@ -94,12 +96,18 @@ class Sort:
 
 
 @dataclass(frozen=True, eq=False)
-class FieldExpression(Generic[T]):
+class FieldExpression(Generic[E, T]):
     """A typed model field path used in filters, sorts, and direct-field patches."""
 
-    root: type[Entity]
+    root: type[E]
     path: str
     descriptor: Field[T]
+
+    def set(self, value: T) -> Patch[E]:
+        """Describe an explicit assignment without sending an HTTP request."""
+        from .criteria import Patch
+
+        return Patch(self.root).set(self, value)
 
     def _predicate(self, kind: str, value: Any) -> Predicate:
         from .mapping import Entity, _encode

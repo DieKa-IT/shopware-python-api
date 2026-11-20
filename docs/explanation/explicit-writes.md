@@ -25,6 +25,15 @@ creation requirements.
 This keeps read state and write intent understandable, particularly when responses
 are partial or contain fields that cannot be written.
 
+```python
+shop.products.update(product_id, Product.stock.set(12), Product.parent_id.set(None))
+```
+
+Each field assignment carries its model type, so the repository accepts patches
+for its own model. The call sends all selected values in one request without
+attaching an entity or tracking changes. Inherited and handwritten fields use the
+same interface as generated fields.
+
 Nested patches still depend on server semantics: sending one custom-field key
 is not a promise that Shopware merges it with existing keys. Verify that behavior
 for your installation.

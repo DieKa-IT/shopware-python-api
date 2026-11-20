@@ -103,8 +103,7 @@ def refresh_collection(shop: ShopContext) -> None:
 
     # Use a unique product number when the ID is not yet known.
     green = shop.products.where(Product.product_number == "DEMO-TSHIRT-GREEN").one()
-    patch = shop.products.patch().set(Product.price, euro_price(17.85, 15.00))
-    update = shop.products.prepare_update(green.id, patch)
+    update = shop.products.prepare_update(green.id, Product.price.set(euro_price(17.85, 15.00)))
     print("Price patch:", update.json)
     update.execute()
     updated = shop.products.get(green.id)

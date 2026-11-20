@@ -14,7 +14,7 @@ and a patch target:
 ```python
 Product.stock > 0
 product.stock
-shop.products.patch().set(Product.stock, 25)
+shop.products.update(product_id, Product.stock.set(25))
 ```
 
 ## Type safety and autocomplete

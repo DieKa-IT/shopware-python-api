@@ -205,7 +205,7 @@ class Field(_MappedField, Generic[T]):
     """A mapped value on instances and a typed query expression on model classes."""
 
     @overload
-    def __get__(self, instance: None, owner: type[Entity]) -> FieldExpression[T]: ...
+    def __get__(self, instance: None, owner: type[E]) -> FieldExpression[E, T]: ...
 
     @overload
     def __get__(self, instance: Entity, owner: type[Entity]) -> T: ...
@@ -444,7 +444,7 @@ class Entity:
         """Original response, including unknown fields; never used as a write payload."""
         return copy.deepcopy(self._extras)
 
-    def is_loaded(self, field: FieldExpression[Any] | type[Entity]) -> bool:
+    def is_loaded(self, field: FieldExpression[Any, Any] | type[Entity]) -> bool:
         """Whether a direct field was supplied, returned, or subsequently assigned."""
         descriptor: _MappedField
         if isinstance(field, type):

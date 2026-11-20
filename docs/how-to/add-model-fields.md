@@ -60,7 +60,7 @@ customer = shop.customers.get(customer_id)
 if customer is not None:
     print(customer.vat_ids)
 
-patch = shop.customers.patch().set(Customer.vat_ids, ["DE123456789"])
+patch = Customer.vat_ids.set(["DE123456789"])
 print(shop.customers.prepare_update(customer_id, patch).json)
 # {"vatIds": ["DE123456789"]}
 ```
@@ -102,7 +102,7 @@ query = shop.products.where(Product.erp_reference == "ERP-4711")
 for product in query.fetch_page().items:
     print(product.erp_reference)
 
-patch = shop.products.patch().set(Product.erp_reference, "ERP-4712")
+patch = Product.erp_reference.set("ERP-4712")
 print(shop.products.prepare_update(product_id, patch).json)
 ```
 

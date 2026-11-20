@@ -110,7 +110,7 @@ customer = Customer.from_data({"id": "1" * 32, "vatIds": ["DE123456789"]})
 print(customer.vat_ids)  # list[str] | None
 
 with ShopContext("https://shop.example", AccessToken("preview-only")) as shop:
-    patch = shop.customers.patch().set(Customer.vat_ids, ["DE123456789"])
+    patch = Customer.vat_ids.set(["DE123456789"])
     print(shop.customers.prepare_update(customer.id, patch).json)
 ```
 

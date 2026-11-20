@@ -48,11 +48,10 @@ Find exactly one product by its unique product number, then update only its pric
 
 ```python
 green = shop.products.where(Product.product_number == "DEMO-TSHIRT-GREEN").one()
-patch = shop.products.patch().set(
-    Product.price,
-    [{"currencyId": currency_id, "gross": 17.85, "net": 15.00, "linked": True}],
+shop.products.update(
+    green.id,
+    Product.price.set([{"currencyId": currency_id, "gross": 17.85, "net": 15.00, "linked": True}]),
 )
-shop.products.update(green.id, patch)
 ```
 
 ## 5. Delete the discontinued design
@@ -101,4 +100,4 @@ Use an expendable product in a development shop for the deletion example.
 - [Query and load associations](../how-to/query-products.md)
 - [Patch fields and preview requests](../how-to/patch-fields.md)
 - [Creation and write contracts](../reference/writes.md)
-- [Known gaps, including the provisional patch API](../known-gaps.md)
+- [Known gaps and nested-write limitations](../known-gaps.md)

@@ -110,10 +110,10 @@ class Patch(Generic[E]):
     model: type[E]
     _changes: tuple[tuple[tuple[str, ...], Any], ...] = ()
 
-    def set(self, field: FieldExpression[T], value: T) -> Patch[E]:
+    def set(self, field: FieldExpression[E, T], value: T) -> Patch[E]:
         """Return a patch setting a writable direct field; explicit None sends JSON null."""
-        if field.root.__entity__ != self.model.__entity__:
-            raise MappingError("Patch field belongs to another entity")
+        if field.root is not self.model:
+            raise MappingError("Patch field belongs to another model")
         descriptor = self.model.__fields__.get(field.descriptor.name)
         if descriptor is not field.descriptor or field.path != descriptor.criteria_path:
             raise MappingError("Patch requires a direct field, not an association traversal")
@@ -122,6 +122,15 @@ class Patch(Generic[E]):
         converted = _encode(descriptor.validate(value))
         remaining = tuple(item for item in self._changes if item[0] != descriptor.json_path)
         return replace(self, _changes=(*remaining, (descriptor.json_path, converted)))
+
+    def _merge(self, other: Patch[E]) -> Patch[E]:
+        if not isinstance(other, Patch):
+            raise MappingError("Updates require Patch values from field.set(value)")
+        if other.model is not self.model:
+            raise MappingError("Patch belongs to another model")
+        paths = {path for path, _ in other._changes}
+        remaining = tuple(item for item in self._changes if item[0] not in paths)
+        return replace(self, _changes=(*remaining, *other._changes))
 
     def to_payload(self) -> dict[str, Any]:
         """Return a fresh nested JSON payload; reject a patch with no selected fields."""

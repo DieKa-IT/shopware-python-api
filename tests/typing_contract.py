@@ -8,6 +8,7 @@ from examples.models import (
     Manufacturer,
     Media,
     Product,
+    ProductBase,
 )
 from shopware_admin import (
     AccessToken,
@@ -52,6 +53,10 @@ class ExtendedProduct(Entity):
     manufacturer: ToOne[ExtendedManufacturer] = to_one("manufacturer")
 
 
+class CustomizedProduct(Product):
+    external_code: Field[str | None] = api_field("externalCode", default=None)
+
+
 class ExtendedShopContext(ShopContext):
     erp_manufacturers = entity_set(ExtendedManufacturer)
 
@@ -63,6 +68,10 @@ def context_contract(shop: ShopContext, extended: ExtendedShopContext) -> None:
     assert_type(shop.products.search().fetch_page(), SearchResult[Product])
     assert_type(shop.products.get("1" * 32), Product | None)
     assert_type(shop.products.patch(), Patch[Product])
+    assert_type(shop.products.update("1" * 32, Product.stock.set(12)), None)
+    assert_type(
+        shop.products.prepare_update("1" * 32, Product.name.set(None)), PreparedRequest[None]
+    )
     assert_type(shop.available_products(), Query[Product])
     localized = shop.with_context(RequestContext(language_id="2" * 32))
     assert_type(localized, ShopContext)
@@ -89,21 +98,24 @@ def contract(client: Client) -> None:
     assert_type(product.erp_reference, str | None)
     assert_type(product.manufacturer, Manufacturer | None)
     assert_type(product.categories, list[Category])
-    assert_type(Product.stock, FieldExpression[int])
-    assert_type(Product.name, FieldExpression[str | None])
+    assert_type(Product.stock, FieldExpression[Product, int])
+    assert_type(Product.name, FieldExpression[Product, str | None])
     assert_type(Product.manufacturer, type[Manufacturer])
-    assert_type(Product.manufacturer.name, FieldExpression[str | None])
+    assert_type(Product.manufacturer.name, FieldExpression[Manufacturer, str | None])
     assert_type(Product.manufacturer.media, type[Media])
-    assert_type(Product.manufacturer.media.url, FieldExpression[str | None])
-    assert_type(Product.manufacturer.media.path, FieldExpression[str])
+    assert_type(Product.manufacturer.media.url, FieldExpression[Media, str | None])
+    assert_type(Product.manufacturer.media.path, FieldExpression[Media, str])
     assert_type(Product.categories, type[Category])
-    assert_type(Product.categories.name, FieldExpression[str | None])
-    assert_type(Product.categories.parent.name, FieldExpression[str | None])
+    assert_type(Product.categories.name, FieldExpression[Category, str | None])
+    assert_type(Product.categories.parent.name, FieldExpression[Category, str | None])
     assert_type(Product.manufacturer.name == "Example", Predicate)
     assert_type(LegacyAssociations.manufacturer, type[Manufacturer])
     assert_type(LegacyAssociations.categories, type[Category])
     assert_type(LegacyAssociations().manufacturer, Manufacturer | None)
-    assert_type(ExtendedProduct.manufacturer.erp_reference, FieldExpression[str | None])
+    assert_type(
+        ExtendedProduct.manufacturer.erp_reference,
+        FieldExpression[ExtendedManufacturer, str | None],
+    )
     assert_type(ExtendedProduct().manufacturer, ExtendedManufacturer | None)
     assert_type(Product.stock > 1, Predicate)
     assert_type(Product.stock.eq(1), Predicate)
@@ -122,6 +134,21 @@ def contract(client: Client) -> None:
     assert_type(repository.get("1" * 32), Product | None)
     patch = repository.patch().set(Product.stock, 10).set(Product.name, None)
     assert_type(patch, Patch[Product])
+    assert_type(ProductBase.stock, FieldExpression[ProductBase, int])
+    assert_type(Product.stock.set(12), Patch[Product])
+    assert_type(Product.erp_reference.set("ERP-1"), Patch[Product])
+    assert_type(CustomizedProduct.stock, FieldExpression[CustomizedProduct, int])
+    assert_type(CustomizedProduct.stock.set(12), Patch[CustomizedProduct])
+    assert_type(CustomizedProduct.external_code.set(None), Patch[CustomizedProduct])
+    changes = [Product.stock.set(12), Product.name.set(None)]
+    assert_type(changes, list[Patch[Product]])
+    assert_type(repository.update("1" * 32, *changes), None)
+    assert_type(
+        client.set(CustomizedProduct).prepare_update(
+            "1" * 32, CustomizedProduct.stock.set(12), CustomizedProduct.external_code.set("ERP-1")
+        ),
+        PreparedRequest[None],
+    )
 
 
 def rejected_inputs() -> None:
@@ -137,7 +164,7 @@ def rejected_inputs() -> None:
     _ = Product.manufacturer.nmae  # type: ignore[attr-defined]
     Product.manufacturer.name.eq(123)  # type: ignore[arg-type]
     Product.categories.active.eq("yes")  # type: ignore[arg-type]
-    Patch(Product).set(Product.manufacturer.name, 123)  # type: ignore[misc]
+    Patch(Product).set(Product.manufacturer.name, 123)  # type: ignore[arg-type, misc]
     ExtendedProduct.manufacturer.erp_reference.eq(123)  # type: ignore[arg-type]
 
 
@@ -146,3 +173,17 @@ def rejected_context_inputs(shop: ShopContext) -> None:
     shop.products = shop.products  # type: ignore[assignment]
     shop.products.create(Category())  # type: ignore[arg-type]
     shop.products.patch().set(Product.stock, "ten")  # type: ignore[misc]
+    Product.stock.set("ten")  # type: ignore[arg-type]
+    Product.stock.set(None)  # type: ignore[arg-type]
+    shop.products.update("1" * 32, Category.name.set("A"))  # type: ignore[arg-type]
+    shop.products.update(
+        "1" * 32,
+        Product.stock.set(12),
+        Category.name.set("A"),  # type: ignore[arg-type]
+    )
+    shop.products.prepare_update("1" * 32, Category.name.set("A"))  # type: ignore[arg-type]
+    shop.products.update("1" * 32, ProductBase.stock.set(12))  # type: ignore[arg-type]
+    shop.products.update("1" * 32, CustomizedProduct.stock.set(12))  # type: ignore[arg-type]
+    shop.products.patch().set(Category.name, "A")  # type: ignore[arg-type]
+    wrong_entity: Patch[Entity] = Product.stock.set(12)  # type: ignore[assignment]
+    _ = wrong_entity

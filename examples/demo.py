@@ -51,8 +51,10 @@ def main() -> None:
         for product in result.items:
             print(product.name, product.stock, product.erp_reference)
 
-        patch = shop.products.patch().set(Product.name, "Updated name").set(Product.parent_id, None)
-        print("Patch preview:", shop.products.prepare_update("1" * 32, patch).json)
+        update = shop.products.prepare_update(
+            "1" * 32, Product.name.set("Updated name"), Product.parent_id.set(None)
+        )
+        print("Patch preview:", update.json)
 
 
 if __name__ == "__main__":

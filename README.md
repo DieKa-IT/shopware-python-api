@@ -7,7 +7,7 @@ Typed Python models, queries, and explicit writes for the Shopware 6 Admin API.
 > plugins is still being validated. Not yet recommended for production use.
 
 See [known gaps](docs/known-gaps.md) before adopting the alpha: endpoint coverage
-is incomplete, and the current patch API needs major reworking.
+and support for nested writes are incomplete.
 
 ## Why this library?
 
@@ -28,10 +28,7 @@ query = shop.products.where(Product.stock > 0).order_by(Product.name.asc())
 for product in query.fetch_page(size=20).items:
     print(product.name, product.stock)  # str | None, int
 
-patch = shop.products.patch().set(Product.stock, 25)
-request = shop.products.prepare_update(product_id, patch)
-print(request.json)  # {"stock": 25}; no request sent yet
-request.execute()
+shop.products.update(product_id, Product.stock.set(25))
 ```
 
 Generate a starting point from your shop's schemas with the separate

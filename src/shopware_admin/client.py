@@ -428,10 +428,11 @@ class Repository(Generic[E]):
         """Use an explicit/client-generated ID; return it after the server accepts the write."""
         return self.prepare_create(entity).execute()
 
-    def prepare_update(self, entity_id: str, patch: Patch[E]) -> PreparedRequest[None]:
-        """Validate and snapshot a patch without sending an update request."""
-        if patch.model.__entity__ != self.model.__entity__:
-            raise MappingError("Patch belongs to another entity")
+    def prepare_update(self, entity_id: str, *changes: Patch[E]) -> PreparedRequest[None]:
+        """Combine and snapshot selected fields without sending an update request."""
+        patch = Patch(self.model)
+        for change in changes:
+            patch = patch._merge(change)
         payload = patch.to_payload()
         if "id" in payload:
             raise MappingError("An update cannot change the primary ID")
@@ -441,9 +442,9 @@ class Repository(Generic[E]):
 
         return self._prepare("PATCH", f"{self.path}/{_id(entity_id)}", payload, execute)
 
-    def update(self, entity_id: str, patch: Patch[E]) -> None:
-        """Send selected patch fields to the entity ID; return None after success."""
-        self.prepare_update(entity_id, patch).execute()
+    def update(self, entity_id: str, *changes: Patch[E]) -> None:
+        """Send all selected fields in one PATCH request; return None after success."""
+        self.prepare_update(entity_id, *changes).execute()
 
     def delete(self, entity_id: str) -> None:
         """Delete the entity by ID immediately; return None after success."""

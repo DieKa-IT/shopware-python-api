@@ -60,7 +60,9 @@ resolve annotations, including forward references. Field types are resolved
 from annotations when first used.
 
 - `__entity__` identifies the DAL entity; `__route__` is its exact API route.
-- `Field[T]` gives `T` on instances and `FieldExpression[T]` on classes.
+- `Field[T]` gives `T` on instances and `FieldExpression[Model, T]` on classes.
+  For example, `Product.stock` is `FieldExpression[Product, int]`, and
+  `Product.stock.set(12)` returns `Patch[Product]`.
 - `ToOne[T]` gives `T | None`; `ToMany[T]` gives `list[T]` on instances.
 - On classes, associations reuse the related entity type for typed dotted queries.
   `Product.manufacturer.name` is a field expression; on an instance,

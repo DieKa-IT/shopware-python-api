@@ -122,7 +122,7 @@ def test_generated_consumer_passes_mypy_pyright_and_ruff(tmp_path, catalog):
     )
     (root / "typing_contract.py").write_text("""from typing import assert_type
 
-from shopware_admin import FieldExpression, Repository
+from shopware_admin import FieldExpression, Patch, Repository
 
 from .context import ShopContext
 from .models.category import Category
@@ -134,9 +134,13 @@ def contract(shop: ShopContext) -> None:
     assert_type(shop.products, Repository[Product])
     assert_type(shop.manufacturers, Repository[Manufacturer])
     assert_type(Product.manufacturer, type[Manufacturer])
-    assert_type(Product.manufacturer.erp_reference, FieldExpression[str | None])
+    assert_type(Product.manufacturer.erp_reference, FieldExpression[Manufacturer, str | None])
     assert_type(Product.categories, type[Category])
-    assert_type(Product.product_number, FieldExpression[str])
+    assert_type(Product.product_number, FieldExpression[Product, str])
+    assert_type(Product.product_number.set("NEW-1"), Patch[Product])
+    assert_type(Manufacturer.erp_reference.set("ERP-1"), Patch[Manufacturer])
+    shop.products.update("1" * 32, Product.product_number.set("NEW-1"))
+    shop.manufacturers.update("1" * 32, Manufacturer.erp_reference.set("ERP-1"))
     assert_type(Product().categories, list[Category])
     assert_type(Product().manufacturer, Manufacturer | None)
 """)
